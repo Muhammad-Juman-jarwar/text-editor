@@ -1,0 +1,5 @@
+export { TemplateBuilderSidebar } from "./sidebar-container"
+export { PagesTab } from "./pages-tab"
+export { DesignTab } from "./design-tab"
+export { ThemeTab } from "./theme-tab"
+export { VariablesTab } from "./variables-tab"

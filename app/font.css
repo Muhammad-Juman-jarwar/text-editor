@@ -1,0 +1,13 @@
+/* Import Syncfusion icon styles directly */
+@import '~@syncfusion/ej2-icons/styles/tailwind3.css';
+
+.e-icons {
+    font-family: 'e-icons' !important;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
