@@ -1,32 +1,32 @@
-"use client"
+'use client';
 
-import React from "react"
-import { useState, useRef, useEffect } from "react"
-import { useDrop } from "react-dnd"
-import type { ElementType } from "../../types/template"
-import { TextElement } from "./text-element"
-import { ImageElement, ImageSettingsPanel } from "./image-element"
-import { ShapeElement } from "./shape-element"
-import { LineElement } from "./line-element"
-import { ButtonElement } from "./button-element"
-import { VideoElement } from "./video-element"
-import { IconElement } from "./icon-element"
-import { TableElement } from "./table-element"
-import { ChartElement } from "./chart-element"
-import { MapElement } from "./map-element"
-import { QRCodeElement } from "./qrcode-element"
-import { TocElement } from "./toc-element"
-import { TocSettingsPanel } from "./toc-settings-panel"
+import React from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useDrop } from 'react-dnd';
+import type { ElementType } from '../../types/template';
+import { TextElement } from './text-element';
+import { ImageElement, ImageSettingsPanel } from './image-element';
+import { ShapeElement } from './shape-element';
+import { LineElement } from './line-element';
+import { ButtonElement } from './button-element';
+import { VideoElement } from './video-element';
+import { IconElement } from './icon-element';
+import { TableElement } from './table-element';
+import { ChartElement } from './chart-element';
+import { MapElement } from './map-element';
+import { QRCodeElement } from './qrcode-element';
+import { TocElement } from './toc-element';
+import { TocSettingsPanel } from './toc-settings-panel';
 
 interface TemplateBuilderCanvasProps {
-  elements: any[]
-  selectedElementId: string | null
-  selectedPageId: string
-  zoom: number
-  addElement: (type: ElementType) => void
-  updateElement: (id: string, updates: any) => void
-  setSelectedElementId: (id: string | null) => void
-  selectedElement: any
+  elements: any[];
+  selectedElementId: string | null;
+  selectedPageId: string;
+  zoom: number;
+  addElement: (type: ElementType) => void;
+  updateElement: (id: string, updates: any) => void;
+  setSelectedElementId: (id: string | null) => void;
+  selectedElement: any;
 }
 
 export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
@@ -39,95 +39,108 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
   setSelectedElementId,
   selectedElement,
 }) => {
-  const canvasRef = useRef<HTMLDivElement>(null)
-  const [isDraggingOver, setIsDraggingOver] = useState(false)
-  const [showImageSettings, setShowImageSettings] = useState(false)
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [showImageSettings, setShowImageSettings] = useState(false);
 
   const [, drop] = useDrop({
-    accept: "element",
+    accept: 'element',
     drop: (item: { type: ElementType }) => {
-      addElement(item.type)
-      setIsDraggingOver(false)
+      addElement(item.type);
+      setIsDraggingOver(false);
 
       // Auto-show settings for image elements
-      if (item.type === "image") {
+      if (item.type === 'image') {
         setTimeout(() => {
-          setShowImageSettings(true)
-        }, 100)
+          setShowImageSettings(true);
+        }, 100);
       }
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
     hover: () => {
-      setIsDraggingOver(true)
+      setIsDraggingOver(true);
     },
-  })
+  });
 
   useEffect(() => {
     if (isDraggingOver === true) {
       setTimeout(() => {
-        setIsDraggingOver(false)
-      }, 2000)
+        setIsDraggingOver(false);
+      }, 2000);
     }
-  }, [isDraggingOver])
+  }, [isDraggingOver]);
 
   // Show image settings when image element is selected
   useEffect(() => {
-    if (selectedElement?.type === "image") {
-      setShowImageSettings(true)
+    if (selectedElement?.type === 'image') {
+      setShowImageSettings(true);
     } else {
-      setShowImageSettings(false)
+      setShowImageSettings(false);
     }
-  }, [selectedElement])
+  }, [selectedElement]);
 
   const handleImageDelete = () => {
-    if (selectedElement?.type === "image") {
+    if (selectedElement?.type === 'image') {
       // Remove element from the editor
-      const elementDiv = document.querySelector(`[data-element-id="${selectedElement.id}"]`)
+      const elementDiv = document.querySelector(
+        `[data-element-id="${selectedElement.id}"]`
+      );
       if (elementDiv) {
-        const container = elementDiv.closest(".element-container")
-        if (container) {
-          container.remove()
+        // Check if the element is inside a layout column
+        const isInLayoutColumn =
+          elementDiv.closest('.layout-column-content') !== null ||
+          elementDiv.closest('.layout-column') !== null;
+
+        if (isInLayoutColumn) {
+          // For elements inside layout columns, only remove the element itself
+          elementDiv.remove();
         } else {
-          elementDiv.remove()
+          // For standalone elements, remove the element-container if it exists
+          const container = elementDiv.closest('.element-container');
+          if (container) {
+            container.remove();
+          } else {
+            elementDiv.remove();
+          }
         }
       }
-      setSelectedElementId(null)
-      setShowImageSettings(false)
+      setSelectedElementId(null);
+      setShowImageSettings(false);
     }
-  }
+  };
 
   return (
-    <div className="flex h-full">
+    <div className='flex h-full'>
       {/* Main Canvas */}
       <div
         ref={drop}
-        className="flex-1"
+        className='flex-1'
         style={{
-          backgroundColor: "#f0f0f0",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          overflow: "hidden",
+          backgroundColor: '#f0f0f0',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          overflow: 'hidden',
         }}
       >
         <div
           ref={canvasRef}
           style={{
-            width: "210mm",
-            height: "297mm",
-            backgroundColor: "white",
-            boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)",
-            transformOrigin: "top left",
+            width: '210mm',
+            height: '297mm',
+            backgroundColor: 'white',
+            boxShadow: '0 0 10px rgba(0, 0, 0, 0.2)',
+            transformOrigin: 'top left',
             transform: `scale(${zoom})`,
-            position: "relative",
-            overflow: "hidden",
+            position: 'relative',
+            overflow: 'hidden',
           }}
         >
           {elements.map((element) => (
             <React.Fragment key={element.id}>
-              {element.type === "text" && (
+              {element.type === 'text' && (
                 <TextElement
                   key={element.id}
                   element={element}
@@ -136,7 +149,7 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
                   onSelect={() => setSelectedElementId(element.id)}
                 />
               )}
-              {element.type === "image" && (
+              {element.type === 'image' && (
                 <ImageElement
                   key={element.id}
                   element={element}
@@ -145,11 +158,13 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
                   onSelect={() => setSelectedElementId(element.id)}
                   onUpdate={(updates) => updateElement(element.id, updates)}
                   onDelete={handleImageDelete}
-                  showSettings={showImageSettings && selectedElementId === element.id}
+                  showSettings={
+                    showImageSettings && selectedElementId === element.id
+                  }
                   onShowSettings={setShowImageSettings}
                 />
               )}
-              {element.type === "shape" && (
+              {element.type === 'shape' && (
                 <ShapeElement
                   key={element.id}
                   element={element}
@@ -158,7 +173,7 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
                   onSelect={() => setSelectedElementId(element.id)}
                 />
               )}
-              {element.type === "line" && (
+              {element.type === 'line' && (
                 <LineElement
                   key={element.id}
                   element={element}
@@ -167,7 +182,7 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
                   onSelect={() => setSelectedElementId(element.id)}
                 />
               )}
-              {element.type === "button" && (
+              {element.type === 'button' && (
                 <ButtonElement
                   key={element.id}
                   element={element}
@@ -176,7 +191,7 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
                   onSelect={() => setSelectedElementId(element.id)}
                 />
               )}
-              {element.type === "video" && (
+              {element.type === 'video' && (
                 <VideoElement
                   key={element.id}
                   element={element}
@@ -185,7 +200,7 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
                   onSelect={() => setSelectedElementId(element.id)}
                 />
               )}
-              {element.type === "icon" && (
+              {element.type === 'icon' && (
                 <IconElement
                   key={element.id}
                   element={element}
@@ -194,7 +209,7 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
                   onSelect={() => setSelectedElementId(element.id)}
                 />
               )}
-              {element.type === "table" && (
+              {element.type === 'table' && (
                 <TableElement
                   key={element.id}
                   element={element}
@@ -203,7 +218,7 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
                   onSelect={() => setSelectedElementId(element.id)}
                 />
               )}
-              {element.type === "chart" && (
+              {element.type === 'chart' && (
                 <ChartElement
                   key={element.id}
                   element={element}
@@ -212,7 +227,7 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
                   onSelect={() => setSelectedElementId(element.id)}
                 />
               )}
-              {element.type === "map" && (
+              {element.type === 'map' && (
                 <MapElement
                   key={element.id}
                   element={element}
@@ -221,7 +236,7 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
                   onSelect={() => setSelectedElementId(element.id)}
                 />
               )}
-              {element.type === "qrcode" && (
+              {element.type === 'qrcode' && (
                 <QRCodeElement
                   key={element.id}
                   element={element}
@@ -230,7 +245,7 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
                   onSelect={() => setSelectedElementId(element.id)}
                 />
               )}
-              {element.type === "toc" && (
+              {element.type === 'toc' && (
                 <TocElement
                   key={element.id}
                   element={element}
@@ -245,7 +260,7 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
       </div>
 
       {/* Right Side Panels */}
-      {selectedElement?.type === "image" && showImageSettings && (
+      {selectedElement?.type === 'image' && showImageSettings && (
         <ImageSettingsPanel
           element={selectedElement}
           onUpdate={(updates) => updateElement(selectedElement.id, updates)}
@@ -254,12 +269,12 @@ export const TemplateBuilderCanvas: React.FC<TemplateBuilderCanvasProps> = ({
         />
       )}
 
-      {selectedElement?.type === "toc" && (
+      {selectedElement?.type === 'toc' && (
         <TocSettingsPanel
           element={selectedElement}
           onUpdate={(updates) => updateElement(selectedElement.id, updates)}
         />
       )}
     </div>
-  )
-}
+  );
+};

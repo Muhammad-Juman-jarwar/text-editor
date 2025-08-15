@@ -99,7 +99,8 @@ body {
 /* Checkered background pattern for transparent images */
 .bg-grid-pattern {
   background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
-    linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+    linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
     linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
@@ -107,7 +108,8 @@ body {
 
 .dark .bg-grid-pattern {
   background-image: linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
-    linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
+    linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
     linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
 }
 
@@ -138,8 +140,12 @@ body {
   line-height: inherit !important;
   font-size: inherit !important;
   font-family: inherit !important;
-  color: inherit !important;
   vertical-align: baseline !important;
+}
+
+/* Allow explicit color styles to override inheritance */
+[contenteditable] *:not([style*='color']) {
+  color: inherit !important;
 }
 
 /* Fix cursor positioning for paragraphs - single line spacing */
@@ -150,9 +156,13 @@ body {
   line-height: inherit !important;
   font-size: inherit !important;
   font-family: inherit !important;
-  color: inherit !important;
   vertical-align: baseline !important;
   min-height: 1em !important;
+}
+
+/* Allow paragraphs to have explicit color styles */
+[contenteditable] p:not([style*='color']) {
+  color: inherit !important;
 }
 
 /* Fix line breaks - single line spacing only */
@@ -177,7 +187,7 @@ body {
 }
 
 [contenteditable] p:empty::before {
-  content: "\200B"; /* Zero-width space for cursor positioning */
+  content: '\200B'; /* Zero-width space for cursor positioning */
   color: transparent;
   font-size: inherit;
   line-height: inherit;
@@ -192,13 +202,43 @@ body {
 [contenteditable] h5,
 [contenteditable] h6 {
   font-weight: bold !important;
-  margin: 1em 0 0.5em 0 !important;
+  margin: 0.25em 0 0.5em 0 !important;
   padding: 0 !important;
   vertical-align: baseline !important;
   line-height: 1.2 !important;
   min-height: 1.2em !important;
-  /* Headings inherit color from parent but can be overridden */
+}
+
+/* Allow headings to have explicit color styles */
+[contenteditable] h1:not([style*='color']),
+[contenteditable] h2:not([style*='color']),
+[contenteditable] h3:not([style*='color']),
+[contenteditable] h4:not([style*='color']),
+[contenteditable] h5:not([style*='color']),
+[contenteditable] h6:not([style*='color']) {
   color: inherit !important;
+}
+
+/* Template builder specific heading styles - override global styles */
+.template-builder-editor-content-area
+  [contenteditable]
+  h1:not([style*='color']),
+.template-builder-editor-content-area
+  [contenteditable]
+  h2:not([style*='color']),
+.template-builder-editor-content-area
+  [contenteditable]
+  h3:not([style*='color']),
+.template-builder-editor-content-area
+  [contenteditable]
+  h4:not([style*='color']),
+.template-builder-editor-content-area
+  [contenteditable]
+  h5:not([style*='color']),
+.template-builder-editor-content-area
+  [contenteditable]
+  h6:not([style*='color']) {
+  color: var(--heading-color, inherit) !important;
 }
 
 /* Dynamic heading sizes based on theme */
@@ -225,6 +265,15 @@ body {
   padding-left: 2em !important;
   line-height: inherit !important;
   color: inherit !important;
+  list-style-position: outside !important;
+}
+
+[contenteditable] ul {
+  list-style-type: disc !important;
+}
+
+[contenteditable] ol {
+  list-style-type: decimal !important;
 }
 
 [contenteditable] li {
@@ -234,6 +283,54 @@ body {
   vertical-align: baseline !important;
   min-height: 1em !important;
   color: inherit !important;
+  display: list-item !important;
+  list-style-type: inherit !important;
+}
+
+/* Ensure list markers are visible */
+[contenteditable] ul li::marker,
+[contenteditable] ol li::marker {
+  color: inherit !important;
+}
+
+/* Ensure nested lists have different bullet styles */
+[contenteditable] ul ul {
+  list-style-type: circle !important;
+}
+
+[contenteditable] ul ul ul {
+  list-style-type: square !important;
+}
+
+[contenteditable] ol ol {
+  list-style-type: lower-alpha !important;
+}
+
+[contenteditable] ol ol ol {
+  list-style-type: lower-roman !important;
+}
+
+/* Fix list styling in different contexts */
+.template-builder-editor-content-area [contenteditable] ul,
+.template-builder-editor-content-area [contenteditable] ol {
+  list-style-position: outside !important;
+  margin-left: 0 !important;
+  padding-left: 2em !important;
+}
+
+.template-builder-editor-content-area [contenteditable] ul {
+  list-style-type: disc !important;
+}
+
+.template-builder-editor-content-area [contenteditable] ol {
+  list-style-type: decimal !important;
+}
+
+.template-builder-editor-content-area [contenteditable] li {
+  display: list-item !important;
+  list-style-type: inherit !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Bold, italic, and other formatting inherit theme colors */
@@ -260,4 +357,33 @@ body {
   border: none !important;
   box-shadow: none !important;
   caret-color: currentColor !important;
+}
+
+.template-builder-editor-content-area [contenteditable] a {
+  color: #0000ee !important;
+  text-decoration: underline !important;
+  cursor: pointer !important;
+}
+
+.template-builder-editor-content-area [contenteditable] a:hover {
+  text-decoration: underline !important;
+  color: #0000ee !important;
+  cursor: pointer !important;
+}
+
+[data-element-type='chart'] {
+  border: var(--chart-border-width, 1px) solid
+    var(--chart-border-color, #e5e7eb) !important;
+}
+
+/* For WebKit browsers */
+.no-arrows::-webkit-outer-spin-button,
+.no-arrows::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For Firefox */
+.no-arrows {
+  -moz-appearance: textfield;
 }

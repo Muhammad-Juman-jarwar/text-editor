@@ -1,24 +1,30 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Slider } from "@/components/ui/slider"
-import { ColorPicker } from "@/components/ui/color-picker"
-import { Separator } from "@/components/ui/separator"
-import { Trash2 } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { ColorPicker } from "@/components/ui/color-picker";
+import { Separator } from "@/components/ui/separator";
+import { Trash2 } from "lucide-react";
 
 interface TocEntry {
-  title: string
-  level: number
-  page: number
+  title: string;
+  level: number;
+  page: number;
 }
 
 interface TocSettingsPanelProps {
-  selectedElement: HTMLElement | null
-  onUpdate: (updates: any) => void
+  selectedElement: HTMLElement | null;
+  onUpdate: (updates: any) => void;
   onClose: () => void;
 }
 
@@ -49,9 +55,13 @@ const dummyTocEntries: TocEntry[] = [
 
   // H5 entries
   { title: "File Upload Flaws", level: 5, page: 14 },
-]
+];
 
-export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanelProps) {
+export function TocSettingsPanel({
+  selectedElement,
+  onUpdate,
+  onClose,
+}: TocSettingsPanelProps) {
   const [settings, setSettings] = useState({
     title: "Table of Contents",
     titleColor: "#1f2937",
@@ -65,20 +75,27 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
     borderStyle: "solid",
     borderColor: "#d1d5db",
     borderWidth: 1,
-  })
+  });
 
-  const fontFamilies = ["Arial", "Times New Roman", "Helvetica", "Georgia", "Verdana", "Calibri"]
+  const fontFamilies = [
+    "Arial",
+    "Times New Roman",
+    "Helvetica",
+    "Georgia",
+    "Verdana",
+    "Calibri",
+  ];
   const bulletStyles = [
     { value: "numbers", label: "Numbers (1.1, 1.2)" },
     { value: "bullets", label: "Bullet Points" },
     { value: "roman", label: "Roman (I, II, III)" },
     { value: "none", label: "None" },
-  ]
+  ];
   const borderStyles = [
     { value: "solid", label: "Solid" },
     { value: "dashed", label: "Dashed" },
     { value: "dotted", label: "Dotted" },
-  ]
+  ];
 
   const headingOptions = [
     { level: 1, label: "H1" },
@@ -86,12 +103,14 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
     { level: 3, label: "H3" },
     { level: 4, label: "H4" },
     { level: 5, label: "H5" },
-  ]
+  ];
 
   // Get filtered entries based on selected heading levels
   const getFilteredEntries = () => {
-    return dummyTocEntries.filter((entry) => settings.headingLevels.includes(entry.level))
-  }
+    return dummyTocEntries.filter((entry) =>
+      settings.headingLevels.includes(entry.level)
+    );
+  };
 
   // Convert number to Roman numerals
   const toRoman = (num: number): string => {
@@ -109,107 +128,124 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
       { value: 5, symbol: "V" },
       { value: 4, symbol: "IV" },
       { value: 1, symbol: "I" },
-    ]
+    ];
 
-    let result = ""
+    let result = "";
     for (const { value, symbol } of romanNumerals) {
       while (num >= value) {
-        result += symbol
-        num -= value
+        result += symbol;
+        num -= value;
       }
     }
-    return result
-  }
+    return result;
+  };
 
   // Initialize settings from selected element
   useEffect(() => {
     if (selectedElement) {
-      selectedElement.classList.add("selected")
+      selectedElement.classList.add("selected");
     }
 
     return () => {
       if (selectedElement) {
-        selectedElement.classList.remove("selected")
+        selectedElement.classList.remove("selected");
       }
-    }
-  }, [selectedElement])
+    };
+  }, [selectedElement]);
 
   const updateSetting = (key: string, value: any) => {
-    const newSettings = { ...settings, [key]: value }
-    setSettings(newSettings)
-    applySettingsToElement(newSettings)
-    onUpdate(newSettings)
-  }
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    applySettingsToElement(newSettings);
+    onUpdate(newSettings);
+  };
 
   const toggleHeadingLevel = (level: number) => {
     const newLevels = settings.headingLevels.includes(level)
       ? settings.headingLevels.filter((l) => l !== level)
-      : [...settings.headingLevels, level].sort()
-    updateSetting("headingLevels", newLevels)
-  }
+      : [...settings.headingLevels, level].sort();
+    updateSetting("headingLevels", newLevels);
+  };
 
-  const getBulletSymbol = (entry: TocEntry, index: number, filteredEntries: TocEntry[]) => {
-    if (settings.bulletStyle === "none") return ""
+  const getBulletSymbol = (
+    entry: TocEntry,
+    index: number,
+    filteredEntries: TocEntry[]
+  ) => {
+    if (settings.bulletStyle === "none") return "";
 
     if (settings.bulletStyle === "numbers") {
-      // Create hierarchical numbering like 1.1, 1.2, 1.1.1, etc.
-      const numbering: number[] = []
+      // Create hierarchical numbering like 1, 2, 3 for H1; 1.1, 1.2, 2.1 for H2; etc.
+      const numbering: number[] = [];
 
-      // Find all parent levels
-      for (let level = 1; level <= entry.level; level++) {
-        const entriesAtLevel = filteredEntries.slice(0, index + 1).filter((e) => e.level === level)
+      // Track counters for each level up to current entry
+      const counters: number[] = [0, 0, 0, 0, 0, 0]; // Support up to H6
 
-        if (level === entry.level) {
-          // Count entries at current level
-          numbering.push(entriesAtLevel.length)
-        } else {
-          // Find the last parent at this level
-          const lastParent = entriesAtLevel[entriesAtLevel.length - 1]
-          if (lastParent) {
-            const parentIndex = filteredEntries.indexOf(lastParent)
-            if (parentIndex <= index) {
-              numbering.push(entriesAtLevel.length)
-            }
+      // Process all entries up to current index to build correct hierarchical numbering
+      for (let i = 0; i <= index; i++) {
+        const currentEntry = filteredEntries[i];
+        const currentLevel = currentEntry.level;
+
+        // Reset deeper level counters when we encounter a higher level heading
+        for (let j = currentLevel; j < counters.length; j++) {
+          if (j > currentLevel - 1) {
+            counters[j] = 0;
           }
         }
+
+        // Increment counter for current level
+        counters[currentLevel - 1]++;
       }
 
-      return numbering.join(".") + "."
+      // Build numbering string for the target entry
+      const targetLevel = entry.level;
+      const result = counters.slice(0, targetLevel).join(".");
+      return result + ".";
     }
 
     if (settings.bulletStyle === "roman") {
       if (entry.level === 1) {
         // Count H1 entries before this one
-        const h1Count = filteredEntries.slice(0, index + 1).filter((e) => e.level === 1).length
-        return toRoman(h1Count) + "."
+        const h1Count = filteredEntries
+          .slice(0, index + 1)
+          .filter((e) => e.level === 1).length;
+        return toRoman(h1Count) + ".";
       } else if (entry.level === 2) {
         // Count H2 entries under current H1
-        const h2Count = filteredEntries.slice(0, index + 1).filter((e) => e.level === 2).length
-        return toRoman(h2Count).toLowerCase() + ")"
+        const h2Count = filteredEntries
+          .slice(0, index + 1)
+          .filter((e) => e.level === 2).length;
+        return toRoman(h2Count).toLowerCase() + ")";
       } else if (entry.level === 3) {
         // Use letters for H3
-        const h3Count = filteredEntries.slice(0, index + 1).filter((e) => e.level === 3).length
-        const letter = String.fromCharCode(96 + h3Count) // a, b, c, etc.
-        return letter + ")"
+        const h3Count = filteredEntries
+          .slice(0, index + 1)
+          .filter((e) => e.level === 3).length;
+        const letter = String.fromCharCode(96 + h3Count); // a, b, c, etc.
+        return letter + ")";
       } else {
         // Use numbers in parentheses for H4+
-        const count = filteredEntries.slice(0, index + 1).filter((e) => e.level === entry.level).length
-        return `(${count})`
+        const count = filteredEntries
+          .slice(0, index + 1)
+          .filter((e) => e.level === entry.level).length;
+        return `(${count})`;
       }
     }
 
     if (settings.bulletStyle === "bullets") {
-      const bullets = ["•", "◦", "▪", "▫", "‣"]
-      return bullets[Math.min(entry.level - 1, bullets.length - 1)]
+      const bullets = ["•", "◦", "▪", "▫", "‣"];
+      return bullets[Math.min(entry.level - 1, bullets.length - 1)];
     }
 
-    return ""
-  }
+    return "";
+  };
 
   const applySettingsToElement = (newSettings: typeof settings) => {
-    if (!selectedElement) return
+    if (!selectedElement) return;
 
-    const filteredEntries = dummyTocEntries.filter((entry) => newSettings.headingLevels.includes(entry.level))
+    const filteredEntries = dummyTocEntries.filter((entry) =>
+      newSettings.headingLevels.includes(entry.level)
+    );
 
     // Update the entire TOC content with border at the edge
     selectedElement.innerHTML = `
@@ -224,7 +260,7 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
       ">
         <div style="padding: 16px;">
           <h3 style="
-            color: ${newSettings.titleColor}; 
+            color: ${newSettings.titleColor} !important; 
             font-family: ${newSettings.fontFamily}; 
             font-size: ${newSettings.fontSize + 4}px; 
             font-weight: 600; 
@@ -235,8 +271,8 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
           <div style="display: flex; flex-direction: column; gap: 8px;">
             ${filteredEntries
               .map((entry, index) => {
-                const bullet = getBulletSymbol(entry, index, filteredEntries)
-                const indent = (entry.level - 1) * newSettings.indentSize
+                const bullet = getBulletSymbol(entry, index, filteredEntries);
+                const indent = (entry.level - 1) * newSettings.indentSize;
                 return `
                   <div style="
                     display: flex; 
@@ -252,11 +288,15 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
                       ${
                         bullet
                           ? `<span style="margin-right: 8px; flex-shrink: 0; font-weight: 500; min-width: ${
-                              newSettings.bulletStyle === "roman" ? "40px" : "30px"
+                              newSettings.bulletStyle === "roman"
+                                ? "40px"
+                                : "30px"
                             };">${bullet}</span>`
                           : ""
                       }
-                      <span style="flex: 1; word-break: break-word;">${entry.title}</span>
+                      <span style="flex: 1; word-break: break-word;">${
+                        entry.title
+                      }</span>
                     </div>
                     <span style="
                       margin-left: 16px; 
@@ -267,24 +307,24 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
                       opacity: 0.8;
                     ">${entry.page}</span>
                   </div>
-                `
+                `;
               })
               .join("")}
           </div>
         </div>
       </div>
-    `
-  }
+    `;
+  };
 
   // Apply settings when component mounts or settings change
   useEffect(() => {
     if (selectedElement) {
-      applySettingsToElement(settings)
+      applySettingsToElement(settings);
     }
-  }, [selectedElement, settings])
+  }, [selectedElement, settings]);
 
   if (!selectedElement) {
-    return null
+    return null;
   }
 
   return (
@@ -293,7 +333,6 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
       <div className="flex-shrink-0 bg-background border-b border-border p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-500 rounded"></div>
             <h3 className="font-semibold">Table of Contents Settings</h3>
           </div>
           <Button
@@ -301,13 +340,25 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
             size="sm"
             onClick={() => {
               if (selectedElement) {
-                const container = selectedElement.closest(".element-container")
-                if (container) {
-                  container.remove()
+                // Check if the element is inside a layout column
+                const isInLayoutColumn =
+                  selectedElement.closest(".layout-column-content") !== null ||
+                  selectedElement.closest(".layout-column") !== null;
+
+                if (isInLayoutColumn) {
+                  // For elements inside layout columns, only remove the element itself
+                  selectedElement.remove();
                 } else {
-                  selectedElement.remove()
+                  // For standalone elements, remove the element-container if it exists
+                  const container =
+                    selectedElement.closest(".element-container");
+                  if (container) {
+                    container.remove();
+                  } else {
+                    selectedElement.remove();
+                  }
                 }
-                onUpdate({ deleted: true })
+                onUpdate({ deleted: true });
               }
             }}
             className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -318,7 +369,7 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         <div className="p-4 space-y-4 pb-8">
           {/* Title */}
           <div>
@@ -337,14 +388,20 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
           <div>
             <Label className="text-sm font-medium">Title Color</Label>
             <div className="mt-2">
-              <ColorPicker value={settings.titleColor} onChange={(color) => updateSetting("titleColor", color)} />
+              <ColorPicker
+                value={settings.titleColor}
+                onChange={(color) => updateSetting("titleColor", color)}
+              />
             </div>
           </div>
 
           {/* Font Family */}
           <div>
             <Label className="text-sm font-medium">Font Family</Label>
-            <Select value={settings.fontFamily} onValueChange={(value) => updateSetting("fontFamily", value)}>
+            <Select
+              value={settings.fontFamily}
+              onValueChange={(value) => updateSetting("fontFamily", value)}
+            >
               <SelectTrigger className="mt-1">
                 <SelectValue />
               </SelectTrigger>
@@ -370,7 +427,9 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
                 step={1}
                 className="w-full"
               />
-              <div className="text-right text-sm text-muted-foreground mt-1">{settings.fontSize}px</div>
+              <div className="text-right text-sm text-muted-foreground mt-1">
+                {settings.fontSize}px
+              </div>
             </div>
           </div>
 
@@ -378,18 +437,27 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
           <div>
             <Label className="text-sm font-medium">Text Color</Label>
             <div className="mt-2">
-              <ColorPicker value={settings.textColor} onChange={(color) => updateSetting("textColor", color)} />
+              <ColorPicker
+                value={settings.textColor}
+                onChange={(color) => updateSetting("textColor", color)}
+              />
             </div>
           </div>
 
           {/* Include Heading Levels */}
           <div>
-            <Label className="text-sm font-medium mb-3 block">Include Heading Levels</Label>
+            <Label className="text-sm font-medium mb-3 block">
+              Include Heading Levels
+            </Label>
             <div className="flex gap-2">
               {headingOptions.map((option) => (
                 <Button
                   key={option.level}
-                  variant={settings.headingLevels.includes(option.level) ? "default" : "outline"}
+                  variant={
+                    settings.headingLevels.includes(option.level)
+                      ? "default"
+                      : "outline"
+                  }
                   size="sm"
                   onClick={() => toggleHeadingLevel(option.level)}
                   className={
@@ -402,13 +470,18 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
                 </Button>
               ))}
             </div>
-            <div className="text-xs text-muted-foreground mt-2">Showing {getFilteredEntries().length} entries</div>
+            <div className="text-xs text-muted-foreground mt-2">
+              Showing {getFilteredEntries().length} entries
+            </div>
           </div>
 
           {/* Bullet Style */}
           <div>
             <Label className="text-sm font-medium">Bullet Style</Label>
-            <Select value={settings.bulletStyle} onValueChange={(value) => updateSetting("bulletStyle", value)}>
+            <Select
+              value={settings.bulletStyle}
+              onValueChange={(value) => updateSetting("bulletStyle", value)}
+            >
               <SelectTrigger className="mt-1">
                 <SelectValue />
               </SelectTrigger>
@@ -434,7 +507,9 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
                 step={5}
                 className="w-full"
               />
-              <div className="text-right text-sm text-muted-foreground mt-1">{settings.indentSize}px</div>
+              <div className="text-right text-sm text-muted-foreground mt-1">
+                {settings.indentSize}px
+              </div>
             </div>
           </div>
 
@@ -445,7 +520,9 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
             <Label className="text-sm font-medium">Border</Label>
             <Select
               value={settings.showBorder ? "border" : "none"}
-              onValueChange={(value) => updateSetting("showBorder", value === "border")}
+              onValueChange={(value) =>
+                updateSetting("showBorder", value === "border")
+              }
             >
               <SelectTrigger className="mt-1">
                 <SelectValue />
@@ -462,7 +539,10 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
               {/* Border Style */}
               <div>
                 <Label className="text-sm font-medium">Border Style</Label>
-                <Select value={settings.borderStyle} onValueChange={(value) => updateSetting("borderStyle", value)}>
+                <Select
+                  value={settings.borderStyle}
+                  onValueChange={(value) => updateSetting("borderStyle", value)}
+                >
                   <SelectTrigger className="mt-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -480,7 +560,10 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
               <div>
                 <Label className="text-sm font-medium">Border Color</Label>
                 <div className="mt-2">
-                  <ColorPicker value={settings.borderColor} onChange={(color) => updateSetting("borderColor", color)} />
+                  <ColorPicker
+                    value={settings.borderColor}
+                    onChange={(color) => updateSetting("borderColor", color)}
+                  />
                 </div>
               </div>
 
@@ -490,19 +573,28 @@ export function TocSettingsPanel({ selectedElement, onUpdate }: TocSettingsPanel
                 <div className="mt-2 px-2">
                   <Slider
                     value={[settings.borderWidth]}
-                    onValueChange={(value) => updateSetting("borderWidth", value[0])}
+                    onValueChange={(value) =>
+                      updateSetting("borderWidth", value[0])
+                    }
                     min={1}
                     max={10}
                     step={1}
                     className="w-full"
                   />
-                  <div className="text-right text-sm text-muted-foreground mt-1">{settings.borderWidth}px</div>
+                  <div className="text-right text-sm text-muted-foreground mt-1">
+                    {settings.borderWidth}px
+                  </div>
                 </div>
               </div>
             </>
           )}
         </div>
       </div>
+      <div className="p-4 border-t flex gap-2">
+        <Button variant="outline" onClick={onClose} className="w-full">
+          Close
+        </Button>
+      </div>
     </div>
-  )
+  );
 }

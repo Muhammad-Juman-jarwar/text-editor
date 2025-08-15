@@ -1,29 +1,45 @@
-"use client"
+'use client';
 
-import React from "react"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ColorPicker } from "@/components/ui/color-picker"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Slider } from "@/components/ui/slider"
+import React from 'react';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ColorPicker } from '@/components/ui/color-picker';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 
 interface ThemeTabProps {
-  template: any
-  onUpdateTemplate: (updates: any) => void
+  template: any;
+  onUpdateTemplate: (updates: any) => void;
 }
 
-const fontFamilies = ["Arial", "Times New Roman", "Helvetica", "Georgia", "Verdana", "Calibri", "Inter", "Roboto"]
+const fontFamilies = [
+  'Arial',
+  'Times New Roman',
+  'Helvetica',
+  'Georgia',
+  'Verdana',
+  'Calibri',
+  'Inter',
+  'Roboto',
+];
 
 export function ThemeTab({ template, onUpdateTemplate }: ThemeTabProps) {
   return (
-    <div className="space-y-4 mt-0">
+    <div className='space-y-4 mt-0'>
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-foreground">Colors</CardTitle>
+        <CardHeader className='pb-3'>
+          <CardTitle className='text-sm text-foreground'>Colors</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className='space-y-4'>
           <div>
-            <Label className="text-xs text-foreground">Primary Color</Label>
+            <Label className='text-xs text-foreground'>Primary Color</Label>
             <ColorPicker
               value={template.theme.colors.primary}
               onChange={(color) =>
@@ -38,7 +54,7 @@ export function ThemeTab({ template, onUpdateTemplate }: ThemeTabProps) {
           </div>
 
           <div>
-            <Label className="text-xs text-foreground">Secondary Color</Label>
+            <Label className='text-xs text-foreground'>Secondary Color</Label>
             <ColorPicker
               value={template.theme.colors.secondary}
               onChange={(color) =>
@@ -53,7 +69,7 @@ export function ThemeTab({ template, onUpdateTemplate }: ThemeTabProps) {
           </div>
 
           <div>
-            <Label className="text-xs text-foreground">Text Color</Label>
+            <Label className='text-xs text-foreground'>Text Color</Label>
             <ColorPicker
               value={template.theme.colors.text}
               onChange={(color) =>
@@ -68,7 +84,7 @@ export function ThemeTab({ template, onUpdateTemplate }: ThemeTabProps) {
           </div>
 
           <div>
-            <Label className="text-xs text-foreground">Page Background</Label>
+            <Label className='text-xs text-foreground'>Page Background</Label>
             <ColorPicker
               value={template.theme.colors.pageBackground}
               onChange={(color) =>
@@ -85,25 +101,30 @@ export function ThemeTab({ template, onUpdateTemplate }: ThemeTabProps) {
       </Card>
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-foreground">Typography</CardTitle>
+        <CardHeader className='pb-3'>
+          <CardTitle className='text-sm text-foreground'>Typography</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className='space-y-4'>
           <div>
-            <Label className="text-xs text-foreground mb-2 block">Default Font Family</Label>
+            <Label className='text-xs text-foreground mb-2 block'>
+              Default Font Family
+            </Label>
             <Select
-              value={template.theme.typography.fontFamily || "Arial"}
+              value={template.theme.typography.fontFamily || 'Arial'}
               onValueChange={(value) =>
                 onUpdateTemplate({
                   theme: {
                     ...template.theme,
-                    typography: { ...template.theme.typography, fontFamily: value },
+                    typography: {
+                      ...template.theme.typography,
+                      fontFamily: value,
+                    },
                   },
                 })
               }
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select font" />
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder='Select font' />
               </SelectTrigger>
               <SelectContent>
                 {fontFamilies.map((font) => (
@@ -116,9 +137,9 @@ export function ThemeTab({ template, onUpdateTemplate }: ThemeTabProps) {
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <Label className="text-xs text-foreground">Base Font Size</Label>
-              <span className="text-xs text-muted-foreground">
+            <div className='flex justify-between items-center mb-2'>
+              <Label className='text-xs text-foreground'>Base Font Size</Label>
+              <span className='text-xs text-muted-foreground'>
                 {template.theme.typography.baseFontSize || 14}px
               </span>
             </div>
@@ -131,7 +152,10 @@ export function ThemeTab({ template, onUpdateTemplate }: ThemeTabProps) {
                 onUpdateTemplate({
                   theme: {
                     ...template.theme,
-                    typography: { ...template.theme.typography, baseFontSize: value },
+                    typography: {
+                      ...template.theme.typography,
+                      baseFontSize: value,
+                    },
                   },
                 })
               }
@@ -139,9 +163,9 @@ export function ThemeTab({ template, onUpdateTemplate }: ThemeTabProps) {
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <Label className="text-xs text-foreground">Line Height</Label>
-              <span className="text-xs text-muted-foreground">
+            <div className='flex justify-between items-center mb-2'>
+              <Label className='text-xs text-foreground'>Line Height</Label>
+              <span className='text-xs text-muted-foreground'>
                 {template.theme.typography.lineHeight || 1.5}
               </span>
             </div>
@@ -154,14 +178,40 @@ export function ThemeTab({ template, onUpdateTemplate }: ThemeTabProps) {
                 onUpdateTemplate({
                   theme: {
                     ...template.theme,
-                    typography: { ...template.theme.typography, lineHeight: value },
+                    typography: {
+                      ...template.theme.typography,
+                      lineHeight: value,
+                    },
                   },
                 })
               }
             />
           </div>
+
+          <div>
+            <div className='flex items-center justify-between'>
+              <Label className='text-xs text-foreground'>Title Numbering</Label>
+              <Switch
+                checked={template.theme.typography.titleNumbering || false}
+                onCheckedChange={(checked) =>
+                  onUpdateTemplate({
+                    theme: {
+                      ...template.theme,
+                      typography: {
+                        ...template.theme.typography,
+                        titleNumbering: checked,
+                      },
+                    },
+                  })
+                }
+              />
+            </div>
+            <p className='text-xs text-muted-foreground mt-1'>
+              Automatically number headings
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

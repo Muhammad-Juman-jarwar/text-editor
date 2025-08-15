@@ -1,63 +1,94 @@
-"use client"
-import { cn } from "@/lib/utils"
+"use client";
+import { cn } from "@/lib/utils";
 
 interface TocEntry {
-  title: string
-  level: number
-  page: number
+  title: string;
+  level: number;
+  page: number;
 }
 
 interface TocElementProps {
   element: {
-    id: string
+    id: string;
     content: {
-      title: string
-      titleColor: string
-      fontFamily: string
-      fontSize: number
-      textColor: string
-      includedLevels: number[]
-      bulletStyle: "bullet" | "number" | "none"
-      indentSize: number
-      showBorder: boolean
-      borderStyle: "solid" | "dashed" | "dotted"
-      borderColor: string
-      borderWidth: number
-      entries: TocEntry[]
-    }
-    position: { x: number; y: number; width: number; height: number }
-  }
-  zoom: number
-  isSelected: boolean
-  onSelect: () => void
+      title: string;
+      titleColor: string;
+      fontFamily: string;
+      fontSize: number;
+      textColor: string;
+      includedLevels: number[];
+      bulletStyle: "bullet" | "number" | "none";
+      indentSize: number;
+      showBorder: boolean;
+      borderStyle: "solid" | "dashed" | "dotted";
+      borderColor: string;
+      borderWidth: number;
+      entries: TocEntry[];
+    };
+    position: { x: number; y: number; width: number; height: number };
+  };
+  zoom: number;
+  isSelected: boolean;
+  onSelect: () => void;
 }
 
-export function TocElement({ element, zoom, isSelected, onSelect }: TocElementProps) {
-  const { content, position } = element
-  const scale = zoom / 100
+export function TocElement({
+  element,
+  zoom,
+  isSelected,
+  onSelect,
+}: TocElementProps) {
+  const { content, position } = element;
+  const scale = zoom / 100;
 
-  const getBulletSymbol = (level: number, index: number) => {
+  const getBulletSymbol = (
+    entry: TocEntry,
+    index: number,
+    filteredEntries: TocEntry[]
+  ) => {
     switch (content.bulletStyle) {
       case "bullet":
-        return "•"
+        return "•";
       case "number":
-        return `${index + 1}.`
+        // Create hierarchical numbering like 1, 2, 3 for H1; 1.1, 1.2, 2.1 for H2; etc.
+        const counters: number[] = [0, 0, 0, 0, 0, 0]; // Support up to H6
+
+        // Process all entries up to current index to build correct hierarchical numbering
+        for (let i = 0; i <= index; i++) {
+          const currentEntry = filteredEntries[i];
+          const currentLevel = currentEntry.level;
+
+          // Reset deeper level counters when we encounter a higher level heading
+          for (let j = currentLevel; j < counters.length; j++) {
+            if (j > currentLevel - 1) {
+              counters[j] = 0;
+            }
+          }
+
+          // Increment counter for current level
+          counters[currentLevel - 1]++;
+        }
+
+        // Build numbering string for the target entry
+        const targetLevel = entry.level;
+        const result = counters.slice(0, targetLevel).join(".");
+        return result + ".";
       case "none":
-        return ""
+        return "";
       default:
-        return "•"
+        return "•";
     }
-  }
+  };
 
   const getIndentLevel = (level: number) => {
-    return (level - 1) * content.indentSize
-  }
+    return (level - 1) * content.indentSize;
+  };
 
   return (
     <div
       className={cn(
         "absolute cursor-pointer transition-all duration-200",
-        isSelected && "ring-2 ring-blue-500 ring-offset-2",
+        isSelected && "ring-2 ring-blue-500 ring-offset-2"
       )}
       style={{
         left: position.x * scale,
@@ -94,7 +125,7 @@ export function TocElement({ element, zoom, isSelected, onSelect }: TocElementPr
         <div className="space-y-2">
           {content.entries
             .filter((entry) => content.includedLevels.includes(entry.level))
-            .map((entry, index) => (
+            .map((entry, index, filteredEntries) => (
               <div
                 key={index}
                 className="flex items-start gap-2"
@@ -106,11 +137,15 @@ export function TocElement({ element, zoom, isSelected, onSelect }: TocElementPr
                 }}
               >
                 {content.bulletStyle !== "none" && (
-                  <span className="flex-shrink-0 mt-0.5">{getBulletSymbol(entry.level, index)}</span>
+                  <span className="flex-shrink-0 mt-0.5">
+                    {getBulletSymbol(entry, index, filteredEntries)}
+                  </span>
                 )}
                 <div className="flex-1 flex justify-between items-start">
                   <span className="leading-tight">{entry.title}</span>
-                  <span className="ml-2 flex-shrink-0 font-mono text-sm">{entry.page}</span>
+                  <span className="ml-2 flex-shrink-0 font-mono text-sm">
+                    {entry.page}
+                  </span>
                 </div>
               </div>
             ))}
@@ -130,5 +165,5 @@ export function TocElement({ element, zoom, isSelected, onSelect }: TocElementPr
         )}
       </div>
     </div>
-  )
+  );
 }
