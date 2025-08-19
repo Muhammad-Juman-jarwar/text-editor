@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, {
   useState,
@@ -6,22 +6,22 @@ import React, {
   useCallback,
   useMemo,
   useRef,
-} from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { ColorPicker } from '@/components/ui/color-picker';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+} from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { ColorPicker } from "@/components/ui/color-picker";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Plus,
   Minus,
@@ -34,7 +34,7 @@ import {
   AlignVerticalJustifyCenter,
   AlignVerticalJustifyEnd,
   Trash2,
-} from 'lucide-react';
+} from "lucide-react";
 
 // Define types for cell data and table settings
 interface CellData {
@@ -48,8 +48,8 @@ interface CellData {
   mergedWith?: { row: number; col: number };
   customBackgroundColor?: string; // Custom background color for individual cells
   customWidth?: number; // Custom width for individual cells in pixels
-  customTextAlign?: 'left' | 'center' | 'right'; // Custom text alignment for individual cells
-  customVerticalAlign?: 'top' | 'middle' | 'bottom'; // Custom vertical alignment for individual cells
+  customTextAlign?: "left" | "center" | "right"; // Custom text alignment for individual cells
+  customVerticalAlign?: "top" | "middle" | "bottom"; // Custom vertical alignment for individual cells
 }
 
 interface TableSettings {
@@ -126,16 +126,16 @@ const defaultTableSettings: TableSettings = {
   columns: 3,
   hasHeader: true,
   showBorders: true,
-  borderColor: '#d1d5db',
+  borderColor: "#d1d5db",
   borderWidth: 1,
   borderRadius: 0,
-  headerBackgroundColor: '#f8f9fa',
-  headerTextColor: '#1f2937',
-  cellBackgroundColor: '#ffffff',
-  cellTextColor: '#1f2937',
+  headerBackgroundColor: "#f8f9fa",
+  headerTextColor: "#1f2937",
+  cellBackgroundColor: "#ffffff",
+  cellTextColor: "#1f2937",
   cellPadding: 12,
   fontSize: 14,
-  fontFamily: 'Arial',
+  fontFamily: "Arial",
   selectedCells: [],
   data: [], // Will be initialized by generateInitialData
   fullWidth: false, // Default to standard width
@@ -148,12 +148,12 @@ defaultTableSettings.data = generateInitialData(
 );
 
 const fontFamilies = [
-  'Arial',
-  'Times New Roman',
-  'Helvetica',
-  'Georgia',
-  'Verdana',
-  'Calibri',
+  "Arial",
+  "Times New Roman",
+  "Helvetica",
+  "Georgia",
+  "Verdana",
+  "Calibri",
 ];
 
 export const TableSettingsPanel = ({
@@ -170,6 +170,11 @@ export const TableSettingsPanel = ({
   //     ? !!selectedElement.getAttribute('data-table-settings')
   //     : false,
   // });
+
+  // Reset state when selectedElement changes
+  const [currentElementRef, setCurrentElementRef] =
+    useState<HTMLElement | null>(null);
+
   // Track when user is actively editing cell text content
   const [isEditingText, setIsEditingText] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -202,16 +207,74 @@ export const TableSettingsPanel = ({
   // Reference to track if we're syncing captured content back to state
   const isSyncingCapturedContent = useRef<boolean>(false);
 
+  // Reference to track if we're in the middle of switching elements
+  const isSwitchingElements = useRef<boolean>(false);
+
+  // Reset state when selectedElement changes to prevent settings leakage
+  useEffect(() => {
+    if (selectedElement !== currentElementRef) {
+      // Set switching flag to prevent any DOM updates during transition
+      isSwitchingElements.current = true;
+
+      setCurrentElementRef(selectedElement);
+
+      // Reset all state flags
+      setIsEditingText(false);
+      setIsInitializing(true);
+      hasPendingContentUpdate.current = false;
+      isProcessingFocusOut.current = false;
+      isCapturingContent.current = false;
+      isSyncingCapturedContent.current = false;
+      manualUpdateRef.current = false;
+
+      // Clear any pending timeouts
+      if (inputTimeoutRef.current) {
+        clearTimeout(inputTimeoutRef.current);
+        inputTimeoutRef.current = null;
+      }
+
+      // Reset initialization flag
+      initializedRef.current = false;
+
+      // Reset settings to fresh defaults to prevent old settings from being applied
+      const freshDefaults = {
+        rows: 3,
+        columns: 3,
+        hasHeader: true,
+        showBorders: true,
+        borderColor: "#d1d5db",
+        borderWidth: 1,
+        borderRadius: 0,
+        headerBackgroundColor: "#f8f9fa",
+        headerTextColor: "#1f2937",
+        cellBackgroundColor: "#ffffff",
+        cellTextColor: "#1f2937",
+        cellPadding: 12,
+        fontSize: 14,
+        fontFamily: "Arial",
+        selectedCells: [],
+        data: generateInitialData(3, 3, true, {}),
+        fullWidth: false,
+      };
+      setSettings(freshDefaults);
+
+      // Clear switching flag after a short delay to allow state to settle
+      setTimeout(() => {
+        isSwitchingElements.current = false;
+      }, 50);
+    }
+  }, [selectedElement, currentElementRef]);
+
   // Function to parse an existing table into our data format
   const parseExistingTable = useCallback(
     (element: HTMLElement): TableSettings => {
       // First, check if we have a data-table-settings attribute on the parent element
       // If so, use that as our primary source of truth
-      const parentElement = element.closest('[data-table-settings]');
+      const parentElement = element.closest("[data-table-settings]");
       if (parentElement) {
         try {
           const settingsAttr = parentElement.getAttribute(
-            'data-table-settings'
+            "data-table-settings"
           );
           if (settingsAttr) {
             const parsedSettings = JSON.parse(settingsAttr);
@@ -225,18 +288,18 @@ export const TableSettingsPanel = ({
             }
           }
         } catch (err) {
-          console.error('Failed to parse table settings from attribute:', err);
+          console.error("Failed to parse table settings from attribute:", err);
           // Continue with HTML parsing as fallback
         }
       }
 
       // Fallback to parsing the HTML structure
-      const tRows = Array.from(element.querySelectorAll('tr'));
+      const tRows = Array.from(element.querySelectorAll("tr"));
       let numCols = 0;
       tRows.forEach((tr) => {
         let currentCols = 0;
         Array.from(tr.children).forEach((cell) => {
-          currentCols += Number.parseInt(cell.getAttribute('colspan') || '1');
+          currentCols += Number.parseInt(cell.getAttribute("colspan") || "1");
         });
         if (currentCols > numCols) numCols = currentCols;
       });
@@ -247,7 +310,7 @@ export const TableSettingsPanel = ({
         data: [] as CellData[][],
       };
       let hasHeader = false;
-      if (tRows.length > 0 && tRows[0].querySelector('th')) {
+      if (tRows.length > 0 && tRows[0].querySelector("th")) {
         hasHeader = true;
       }
       newSettings.hasHeader = hasHeader;
@@ -288,17 +351,17 @@ export const TableSettingsPanel = ({
 
           const htmlCell = cell as HTMLTableCellElement;
           const colspan = Number.parseInt(
-            htmlCell.getAttribute('colspan') || '1'
+            htmlCell.getAttribute("colspan") || "1"
           );
           const rowspan = Number.parseInt(
-            htmlCell.getAttribute('rowspan') || '1'
+            htmlCell.getAttribute("rowspan") || "1"
           );
-          const isTh = htmlCell.tagName === 'TH';
-          const isMergedMaster = htmlCell.hasAttribute('data-is-merged-master');
+          const isTh = htmlCell.tagName === "TH";
+          const isMergedMaster = htmlCell.hasAttribute("data-is-merged-master");
 
           // Store cell content and data
           grid[rIndex][currentGridCol] = {
-            content: htmlCell.textContent?.trim() || '',
+            content: htmlCell.textContent?.trim() || "",
             colspan: colspan,
             rowspan: rowspan,
             isHeader: isTh,
@@ -321,7 +384,7 @@ export const TableSettingsPanel = ({
                     row: rIndex,
                     col: currentGridCol,
                   };
-                  grid[rIndex + i][currentGridCol + j].content = ''; // Clear content of covered cells
+                  grid[rIndex + i][currentGridCol + j].content = ""; // Clear content of covered cells
                   mergedCells.add(`${rIndex + i},${currentGridCol + j}`); // Add to tracking set
                 }
               }
@@ -362,7 +425,7 @@ export const TableSettingsPanel = ({
       // Define explicit border style to ensure it's visible when showBorders is true
       const borderStyle = showBorders
         ? `${borderWidth}px solid ${borderColor}`
-        : 'none';
+        : "none";
 
       // Apply styles to the table element with explicit border handling
       // Always use border-collapse: collapse to ensure cells are adjacent with no spacing
@@ -370,13 +433,13 @@ export const TableSettingsPanel = ({
       const tableStyles = `
       border-collapse: collapse;
       border-spacing: 0;
-      width: ${fullWidth ? '100%' : 'auto'};
+      width: ${fullWidth ? "100%" : "auto"};
       border-radius: ${borderRadius}px;
       overflow: hidden;
       border: ${borderStyle};
     `
         .trim()
-        .replace(/\s+/g, ' ');
+        .replace(/\s+/g, " ");
 
       // Make sure font-family and font-size are explicitly applied
       // Apply borders to all cells when showBorders is true
@@ -390,18 +453,18 @@ export const TableSettingsPanel = ({
       border: ${borderStyle} !important;
     `
         .trim()
-        .replace(/\s+/g, ' ');
+        .replace(/\s+/g, " ");
 
       let html = `<table style="${tableStyles}" data-merged-cells="true">`;
 
       if (data && data.length > 0) {
         for (let i = 0; i < data.length; i++) {
-          html += '<tr>';
+          html += "<tr>";
           for (let j = 0; j < data[i].length; j++) {
             const cell = data[i][j];
             if (cell.merged) continue;
 
-            const tag = cell.isHeader ? 'th' : 'td';
+            const tag = cell.isHeader ? "th" : "td";
 
             // Make sure colors are applied with !important to override any default styling
             const specificCellStyles = `
@@ -414,26 +477,26 @@ export const TableSettingsPanel = ({
               cell.isHeader ? headerTextColor : cellTextColor
             } !important;
             ${
-              cell.customWidth ? `width: ${cell.customWidth}px !important;` : ''
+              cell.customWidth ? `width: ${cell.customWidth}px !important;` : ""
             }
             ${
               cell.customTextAlign
                 ? `text-align: ${cell.customTextAlign} !important;`
-                : ''
+                : ""
             }
             ${
               cell.customVerticalAlign
                 ? `vertical-align: ${cell.customVerticalAlign} !important;`
-                : ''
+                : ""
             }
           `
               .trim()
-              .replace(/\s+/g, ' ');
+              .replace(/\s+/g, " ");
 
             const mergedDataAttr =
               cell.colspan > 1 || cell.rowspan > 1
                 ? 'data-is-merged-master="true"'
-                : '';
+                : "";
 
             html += `<${tag} 
             style="${specificCellStyles}" 
@@ -444,11 +507,11 @@ export const TableSettingsPanel = ({
             ${mergedDataAttr}
           >${cell.content}</${tag}>`;
           }
-          html += '</tr>';
+          html += "</tr>";
         }
       }
 
-      html += '</table>';
+      html += "</table>";
       return html;
     },
     []
@@ -456,22 +519,22 @@ export const TableSettingsPanel = ({
 
   const addTableInteractivity = useCallback(
     (element: HTMLElement): void => {
-      const table = element.querySelector('table');
+      const table = element.querySelector("table");
       if (!table) return;
 
       // Inject CSS for higher specificity without !important
       const injectTableStyles = (settings: any) => {
         // Remove any existing table-builder-styles
-        const existingStyle = document.getElementById('table-builder-styles');
+        const existingStyle = document.getElementById("table-builder-styles");
         if (existingStyle) {
           existingStyle.remove();
         }
 
-        const style = document.createElement('style');
-        style.id = 'table-builder-styles';
+        const style = document.createElement("style");
+        style.id = "table-builder-styles";
         const borderStyle = settings.showBorders
           ? `${settings.borderWidth}px solid ${settings.borderColor}`
-          : 'none';
+          : "none";
         style.textContent = `
           .table-builder-cell.table-builder-header {
             color: ${settings.headerTextColor} !important;
@@ -507,15 +570,15 @@ export const TableSettingsPanel = ({
       }
 
       // IMPORTANT: Preserve original inline styles FIRST, before any modifications
-      clone.querySelectorAll('td, th').forEach((cell: Element) => {
-        const style = (cell as HTMLElement).getAttribute('style');
+      clone.querySelectorAll("td, th").forEach((cell: Element) => {
+        const style = (cell as HTMLElement).getAttribute("style");
         if (style) {
-          (cell as HTMLElement).setAttribute('data-original-style', style);
+          (cell as HTMLElement).setAttribute("data-original-style", style);
         }
       });
 
       // Ensure table maintains its styling attributes
-      const tableSettings = element.getAttribute('data-table-settings');
+      const tableSettings = element.getAttribute("data-table-settings");
       if (tableSettings) {
         try {
           const parsed = JSON.parse(tableSettings);
@@ -526,34 +589,34 @@ export const TableSettingsPanel = ({
           // Preserve the original table's styles by applying all settings consistently
           const borderStyle = parsed.showBorders
             ? `${parsed.borderWidth}px solid ${parsed.borderColor}`
-            : 'none';
+            : "none";
 
           // Apply same border-collapse setting as in generateTableHtml
           clone.style.borderCollapse = parsed.showBorders
-            ? 'collapse'
-            : 'separate';
+            ? "collapse"
+            : "separate";
 
           // Apply the same border style to the table
           clone.style.border = borderStyle;
           clone.style.borderRadius = `${parsed.borderRadius}px`;
-          clone.style.overflow = 'hidden';
+          clone.style.overflow = "hidden";
 
           // Apply consistent border styling to all cells
-          clone.querySelectorAll('td, th').forEach((cell: Element) => {
+          clone.querySelectorAll("td, th").forEach((cell: Element) => {
             // Apply border styling consistently
             (cell as HTMLElement).style.border = borderStyle;
 
             // Add custom classes for better CSS specificity control
-            cell.classList.add('table-builder-cell');
-            if (cell.tagName.toLowerCase() === 'th') {
-              cell.classList.add('table-builder-header');
+            cell.classList.add("table-builder-cell");
+            if (cell.tagName.toLowerCase() === "th") {
+              cell.classList.add("table-builder-header");
             } else {
-              cell.classList.add('table-builder-body');
+              cell.classList.add("table-builder-body");
             }
 
             // Apply custom background colors if they exist
-            const row = parseInt(cell.getAttribute('data-row') || '-1', 10);
-            const col = parseInt(cell.getAttribute('data-col') || '-1', 10);
+            const row = parseInt(cell.getAttribute("data-row") || "-1", 10);
+            const col = parseInt(cell.getAttribute("data-col") || "-1", 10);
 
             if (
               row >= 0 &&
@@ -565,69 +628,69 @@ export const TableSettingsPanel = ({
               const cellData = parsed.data[row][col];
               if (cellData.customBackgroundColor) {
                 (cell as HTMLElement).style.setProperty(
-                  '--custom-bg-color',
+                  "--custom-bg-color",
                   cellData.customBackgroundColor
                 );
-                cell.setAttribute('data-custom-bg', 'true');
+                cell.setAttribute("data-custom-bg", "true");
               }
               if (cellData.customTextAlign) {
                 (cell as HTMLElement).style.setProperty(
-                  '--custom-text-align',
+                  "--custom-text-align",
                   cellData.customTextAlign
                 );
-                cell.setAttribute('data-custom-align', 'true');
+                cell.setAttribute("data-custom-align", "true");
               }
               if (cellData.customVerticalAlign) {
                 (cell as HTMLElement).style.setProperty(
-                  '--custom-vertical-align',
+                  "--custom-vertical-align",
                   cellData.customVerticalAlign
                 );
-                cell.setAttribute('data-custom-valign', 'true');
+                cell.setAttribute("data-custom-valign", "true");
               }
             }
           });
         } catch (error) {
           console.error(
-            'Error parsing table settings in addTableInteractivity:',
+            "Error parsing table settings in addTableInteractivity:",
             error
           );
         }
       }
 
-      clone.querySelectorAll('td, th').forEach((cell: Element) => {
-        cell.setAttribute('contenteditable', 'true');
-        cell.classList.add('editable-cell');
+      clone.querySelectorAll("td, th").forEach((cell: Element) => {
+        cell.setAttribute("contenteditable", "true");
+        cell.classList.add("editable-cell");
       });
 
       // --- NEW: Update state on input ---
       clone.addEventListener(
-        'input',
+        "input",
         (e) => {
           const targetCell = (e.target as HTMLElement).closest(
-            '.editable-cell'
+            ".editable-cell"
           );
           if (!targetCell) return;
           const row = Number.parseInt(
-            targetCell.getAttribute('data-row') || '-1'
+            targetCell.getAttribute("data-row") || "-1"
           );
           const col = Number.parseInt(
-            targetCell.getAttribute('data-col') || '-1'
+            targetCell.getAttribute("data-col") || "-1"
           );
           if (row < 0 || col < 0) return;
 
           // CRITICAL: Preserve styling during input to prevent color loss
-          const originalStyle = targetCell.getAttribute('data-original-style');
-          const currentStyle = targetCell.getAttribute('style') || '';
+          const originalStyle = targetCell.getAttribute("data-original-style");
+          const currentStyle = targetCell.getAttribute("style") || "";
 
           // If the cell has lost its color during typing, restore it
           if (
-            !currentStyle.includes('color:') &&
-            originalStyle?.includes('color:')
+            !currentStyle.includes("color:") &&
+            originalStyle?.includes("color:")
           ) {
             // Extract the color from original style
             const colorMatch = originalStyle.match(/color:\s*([^;]+)/);
             if (colorMatch) {
-              targetCell.style.color = colorMatch[1].trim();
+              (targetCell as HTMLElement).style.color = colorMatch[1].trim();
             }
           }
 
@@ -643,11 +706,11 @@ export const TableSettingsPanel = ({
               const newData = [...currentSettings.data.map((r) => [...r])];
               if (newData[row] && newData[row][col]) {
                 newData[row][col].content =
-                  targetCell.textContent?.trim() || '';
+                  targetCell.textContent?.trim() || "";
               }
               const updatedSettings = { ...currentSettings, data: newData };
               element.setAttribute(
-                'data-table-settings',
+                "data-table-settings",
                 JSON.stringify(updatedSettings)
               );
               return updatedSettings;
@@ -661,30 +724,30 @@ export const TableSettingsPanel = ({
       // --- END NEW ---
 
       const handleFocusIn = (e: Event) => {
-        const targetCell = (e.target as HTMLElement).closest('.editable-cell');
+        const targetCell = (e.target as HTMLElement).closest(".editable-cell");
         if (!targetCell) return;
-        targetCell.classList.add('cell-focus');
+        targetCell.classList.add("cell-focus");
         setIsEditingText(true);
       };
 
       const handleFocusOut = (e: Event) => {
-        const targetCell = (e.target as HTMLElement).closest('.editable-cell');
+        const targetCell = (e.target as HTMLElement).closest(".editable-cell");
         if (!targetCell) return;
-        targetCell.classList.remove('cell-focus');
+        targetCell.classList.remove("cell-focus");
 
         // Set processing flag to prevent DOM regeneration
         isProcessingFocusOut.current = true;
 
         // IMPORTANT: Preserve the cell's styling before any changes
-        const originalStyle = targetCell.getAttribute('data-original-style');
-        const currentStyle = targetCell.getAttribute('style');
+        const originalStyle = targetCell.getAttribute("data-original-style");
+        const currentStyle = targetCell.getAttribute("style");
 
         // Capture final content immediately
         const row = Number.parseInt(
-          targetCell.getAttribute('data-row') || '-1'
+          targetCell.getAttribute("data-row") || "-1"
         );
         const col = Number.parseInt(
-          targetCell.getAttribute('data-col') || '-1'
+          targetCell.getAttribute("data-col") || "-1"
         );
 
         if (row >= 0 && col >= 0) {
@@ -697,11 +760,11 @@ export const TableSettingsPanel = ({
           setSettings((currentSettings) => {
             const newData = [...currentSettings.data.map((r) => [...r])];
             if (newData[row] && newData[row][col]) {
-              newData[row][col].content = targetCell.textContent?.trim() || '';
+              newData[row][col].content = targetCell.textContent?.trim() || "";
             }
             const updatedSettings = { ...currentSettings, data: newData };
             element.setAttribute(
-              'data-table-settings',
+              "data-table-settings",
               JSON.stringify(updatedSettings)
             );
             return updatedSettings;
@@ -711,23 +774,23 @@ export const TableSettingsPanel = ({
         // CRITICAL: Restore original styles immediately after content update
         // This ensures text color is preserved when transitioning out of edit mode
         if (originalStyle) {
-          targetCell.setAttribute('style', originalStyle);
-        } else if (currentStyle && !currentStyle.includes('color:')) {
+          targetCell.setAttribute("style", originalStyle);
+        } else if (currentStyle && !currentStyle.includes("color:")) {
           // If no original style but current style exists without color, add color
-          const tableSettings = element.getAttribute('data-table-settings');
+          const tableSettings = element.getAttribute("data-table-settings");
           if (tableSettings) {
             try {
               const parsed = JSON.parse(tableSettings);
-              const isHeader = targetCell.tagName.toLowerCase() === 'th';
+              const isHeader = targetCell.tagName.toLowerCase() === "th";
               const textColor = isHeader
                 ? parsed.headerTextColor
                 : parsed.cellTextColor;
               targetCell.setAttribute(
-                'style',
+                "style",
                 currentStyle + `; color: ${textColor} !important;`
               );
             } catch (e) {
-              console.warn('Failed to restore text color during focus out:', e);
+              console.warn("Failed to restore text color during focus out:", e);
             }
           }
         }
@@ -745,40 +808,46 @@ export const TableSettingsPanel = ({
           if (element) {
             try {
               const updatedSettingsStr = element.getAttribute(
-                'data-table-settings'
+                "data-table-settings"
               );
               if (updatedSettingsStr) {
                 const parsedSettings = JSON.parse(updatedSettingsStr);
                 onUpdate(parsedSettings);
               }
             } catch (error) {
-              console.error('Error parsing settings after cell edit:', error);
+              console.error("Error parsing settings after cell edit:", error);
             }
           }
         }, 100);
       };
 
-      clone.addEventListener('focusin', handleFocusIn, true);
-      clone.addEventListener('focusout', handleFocusOut, true);
-      clone.classList.add('main-document-table');
+      clone.addEventListener("focusin", handleFocusIn, true);
+      clone.addEventListener("focusout", handleFocusOut, true);
+      clone.classList.add("main-document-table");
     },
     [onUpdate]
   );
 
   const updateTableElement = useCallback(
     (element: HTMLElement, newSettings: TableSettings): void => {
+      // Prevent DOM updates during element switching
+      if (isSwitchingElements.current) {
+        console.log("Skipping DOM update during element switching");
+        return;
+      }
+
       // Before making any changes, capture current text content from DOM
       const captureCurrentContent = () => {
-        const table = element.querySelector('table');
+        const table = element.querySelector("table");
         if (!table) return newSettings;
 
         const updatedSettings = { ...newSettings };
         const updatedData = [...newSettings.data.map((row) => [...row])];
 
         // Capture content from ALL table cells (both editable and non-editable)
-        table.querySelectorAll('td, th').forEach((cell) => {
-          const row = parseInt(cell.getAttribute('data-row') || '-1');
-          const col = parseInt(cell.getAttribute('data-col') || '-1');
+        table.querySelectorAll("td, th").forEach((cell) => {
+          const row = parseInt(cell.getAttribute("data-row") || "-1");
+          const col = parseInt(cell.getAttribute("data-col") || "-1");
 
           if (
             row >= 0 &&
@@ -787,13 +856,13 @@ export const TableSettingsPanel = ({
             updatedData[row][col]
           ) {
             // Get the current text content from the DOM - use textContent for plain text
-            const currentContent = cell.textContent?.trim() || '';
+            const currentContent = cell.textContent?.trim() || "";
             // Only update if there's actual content and it's different from default placeholder text
             if (
               currentContent &&
-              !currentContent.startsWith('Header ') &&
-              !currentContent.startsWith('Cell ') &&
-              currentContent !== '&nbsp;'
+              !currentContent.startsWith("Header ") &&
+              !currentContent.startsWith("Cell ") &&
+              currentContent !== "&nbsp;"
             ) {
               updatedData[row][col].content = currentContent;
             }
@@ -814,11 +883,11 @@ export const TableSettingsPanel = ({
 
       // Update injected CSS styles for real-time changes
       const updateInjectedStyles = (settings: TableSettings) => {
-        const existingStyle = document.getElementById('table-builder-styles');
+        const existingStyle = document.getElementById("table-builder-styles");
         if (existingStyle) {
           const borderStyle = settings.showBorders
             ? `${settings.borderWidth}px solid ${settings.borderColor}`
-            : 'none';
+            : "none";
           existingStyle.textContent = `
             .table-builder-cell.table-builder-header {
               color: ${settings.headerTextColor} !important;
@@ -853,18 +922,18 @@ export const TableSettingsPanel = ({
 
         // Even when editing text, we should update the settings attribute
         element.setAttribute(
-          'data-table-settings',
+          "data-table-settings",
           JSON.stringify(settingsWithCurrentContent)
         );
 
         // Apply critical style changes to cells even during text editing
         // This ensures real-time preview of color, font, and border changes
-        const table = element.querySelector('table');
+        const table = element.querySelector("table");
         if (table) {
           // Update custom cell background colors
-          table.querySelectorAll('td, th').forEach((cell) => {
-            const row = parseInt(cell.getAttribute('data-row') || '-1', 10);
-            const col = parseInt(cell.getAttribute('data-col') || '-1', 10);
+          table.querySelectorAll("td, th").forEach((cell) => {
+            const row = parseInt(cell.getAttribute("data-row") || "-1", 10);
+            const col = parseInt(cell.getAttribute("data-col") || "-1", 10);
 
             if (
               row >= 0 &&
@@ -875,36 +944,36 @@ export const TableSettingsPanel = ({
               const cellData = settingsWithCurrentContent.data[row][col];
               if (cellData.customBackgroundColor) {
                 (cell as HTMLElement).style.setProperty(
-                  '--custom-bg-color',
+                  "--custom-bg-color",
                   cellData.customBackgroundColor
                 );
-                cell.setAttribute('data-custom-bg', 'true');
+                cell.setAttribute("data-custom-bg", "true");
               } else {
-                cell.removeAttribute('data-custom-bg');
-                (cell as HTMLElement).style.removeProperty('--custom-bg-color');
+                cell.removeAttribute("data-custom-bg");
+                (cell as HTMLElement).style.removeProperty("--custom-bg-color");
               }
               if (cellData.customTextAlign) {
                 (cell as HTMLElement).style.setProperty(
-                  '--custom-text-align',
+                  "--custom-text-align",
                   cellData.customTextAlign
                 );
-                cell.setAttribute('data-custom-align', 'true');
+                cell.setAttribute("data-custom-align", "true");
               } else {
-                cell.removeAttribute('data-custom-align');
+                cell.removeAttribute("data-custom-align");
                 (cell as HTMLElement).style.removeProperty(
-                  '--custom-text-align'
+                  "--custom-text-align"
                 );
               }
               if (cellData.customVerticalAlign) {
                 (cell as HTMLElement).style.setProperty(
-                  '--custom-vertical-align',
+                  "--custom-vertical-align",
                   cellData.customVerticalAlign
                 );
-                cell.setAttribute('data-custom-valign', 'true');
+                cell.setAttribute("data-custom-valign", "true");
               } else {
-                cell.removeAttribute('data-custom-valign');
+                cell.removeAttribute("data-custom-valign");
                 (cell as HTMLElement).style.removeProperty(
-                  '--custom-vertical-align'
+                  "--custom-vertical-align"
                 );
               }
             }
@@ -914,7 +983,7 @@ export const TableSettingsPanel = ({
           if (settingsWithCurrentContent.showBorders !== undefined) {
             const borderStyle = settingsWithCurrentContent.showBorders
               ? `${settingsWithCurrentContent.borderWidth}px solid ${settingsWithCurrentContent.borderColor}`
-              : 'none';
+              : "none";
 
             // Apply border to the table with !important to override any default styling
             table.style.cssText += `; border: ${borderStyle} !important;`;
@@ -922,14 +991,14 @@ export const TableSettingsPanel = ({
             // Set the table's border-collapse property based on showBorders setting
             // This ensures proper border rendering between cells
             table.style.borderCollapse = settingsWithCurrentContent.showBorders
-              ? 'collapse'
-              : 'separate';
+              ? "collapse"
+              : "separate";
 
             // Apply borders to all cells individually to ensure they appear between non-merged cells
-            table.querySelectorAll('td, th').forEach((cell) => {
+            table.querySelectorAll("td, th").forEach((cell) => {
               // For merged cells, we need to check rowspan and colspan
-              const rowspan = parseInt(cell.getAttribute('rowspan') || '1', 10);
-              const colspan = parseInt(cell.getAttribute('colspan') || '1', 10);
+              const rowspan = parseInt(cell.getAttribute("rowspan") || "1", 10);
+              const colspan = parseInt(cell.getAttribute("colspan") || "1", 10);
               const isMerged = rowspan > 1 || colspan > 1;
 
               // Apply border to the cell with !important flag to override any default styling
@@ -944,7 +1013,7 @@ export const TableSettingsPanel = ({
             settingsWithCurrentContent.hasHeader !== undefined &&
             !isEditingText
           ) {
-            const firstRow = table.querySelector('tr');
+            const firstRow = table.querySelector("tr");
             if (firstRow) {
               const cells = Array.from(firstRow.children);
 
@@ -952,9 +1021,9 @@ export const TableSettingsPanel = ({
               if (settingsWithCurrentContent.hasHeader) {
                 cells.forEach((cell, index) => {
                   // Only convert if it's not already a TH
-                  if (cell.tagName.toLowerCase() !== 'th') {
+                  if (cell.tagName.toLowerCase() !== "th") {
                     const content = cell.innerHTML;
-                    const newHeader = document.createElement('th');
+                    const newHeader = document.createElement("th");
 
                     // Copy attributes from old cell
                     Array.from(cell.attributes).forEach((attr) => {
@@ -963,8 +1032,8 @@ export const TableSettingsPanel = ({
 
                     // Apply header styling using CSS classes for better performance
                     newHeader.classList.add(
-                      'table-builder-cell',
-                      'table-builder-header'
+                      "table-builder-cell",
+                      "table-builder-header"
                     );
 
                     // Add content and replace cell
@@ -976,9 +1045,9 @@ export const TableSettingsPanel = ({
               // If header should be disabled, convert all TH to TD
               else {
                 cells.forEach((cell, index) => {
-                  if (cell.tagName.toLowerCase() === 'th') {
+                  if (cell.tagName.toLowerCase() === "th") {
                     const content = cell.innerHTML;
-                    const newCell = document.createElement('td');
+                    const newCell = document.createElement("td");
 
                     // Copy attributes from old cell
                     Array.from(cell.attributes).forEach((attr) => {
@@ -987,8 +1056,8 @@ export const TableSettingsPanel = ({
 
                     // Apply regular cell styling using CSS classes for better performance
                     newCell.classList.add(
-                      'table-builder-cell',
-                      'table-builder-body'
+                      "table-builder-cell",
+                      "table-builder-body"
                     );
 
                     // Add content and replace cell
@@ -1001,22 +1070,22 @@ export const TableSettingsPanel = ({
           }
 
           // Update font properties and colors on all cells using CSS classes for better performance
-          table.querySelectorAll('td, th').forEach((cell) => {
+          table.querySelectorAll("td, th").forEach((cell) => {
             // Add custom classes for better CSS specificity control
-            cell.classList.add('table-builder-cell');
+            cell.classList.add("table-builder-cell");
 
-            const isHeader = cell.tagName.toLowerCase() === 'th';
+            const isHeader = cell.tagName.toLowerCase() === "th";
             if (isHeader) {
-              cell.classList.add('table-builder-header');
-              cell.classList.remove('table-builder-body');
+              cell.classList.add("table-builder-header");
+              cell.classList.remove("table-builder-body");
             } else {
-              cell.classList.add('table-builder-body');
-              cell.classList.remove('table-builder-header');
+              cell.classList.add("table-builder-body");
+              cell.classList.remove("table-builder-header");
             }
 
             // Apply custom background colors if they exist
-            const row = parseInt(cell.getAttribute('data-row') || '-1', 10);
-            const col = parseInt(cell.getAttribute('data-col') || '-1', 10);
+            const row = parseInt(cell.getAttribute("data-row") || "-1", 10);
+            const col = parseInt(cell.getAttribute("data-col") || "-1", 10);
 
             if (
               row >= 0 &&
@@ -1027,36 +1096,36 @@ export const TableSettingsPanel = ({
               const cellData = settingsWithCurrentContent.data[row][col];
               if (cellData.customBackgroundColor) {
                 (cell as HTMLElement).style.setProperty(
-                  '--custom-bg-color',
+                  "--custom-bg-color",
                   cellData.customBackgroundColor
                 );
-                cell.setAttribute('data-custom-bg', 'true');
+                cell.setAttribute("data-custom-bg", "true");
               } else {
-                cell.removeAttribute('data-custom-bg');
-                (cell as HTMLElement).style.removeProperty('--custom-bg-color');
+                cell.removeAttribute("data-custom-bg");
+                (cell as HTMLElement).style.removeProperty("--custom-bg-color");
               }
               if (cellData.customTextAlign) {
                 (cell as HTMLElement).style.setProperty(
-                  '--custom-text-align',
+                  "--custom-text-align",
                   cellData.customTextAlign
                 );
-                cell.setAttribute('data-custom-align', 'true');
+                cell.setAttribute("data-custom-align", "true");
               } else {
-                cell.removeAttribute('data-custom-align');
+                cell.removeAttribute("data-custom-align");
                 (cell as HTMLElement).style.removeProperty(
-                  '--custom-text-align'
+                  "--custom-text-align"
                 );
               }
               if (cellData.customVerticalAlign) {
                 (cell as HTMLElement).style.setProperty(
-                  '--custom-vertical-align',
+                  "--custom-vertical-align",
                   cellData.customVerticalAlign
                 );
-                cell.setAttribute('data-custom-valign', 'true');
+                cell.setAttribute("data-custom-valign", "true");
               } else {
-                cell.removeAttribute('data-custom-valign');
+                cell.removeAttribute("data-custom-valign");
                 (cell as HTMLElement).style.removeProperty(
-                  '--custom-vertical-align'
+                  "--custom-vertical-align"
                 );
               }
             }
@@ -1069,9 +1138,9 @@ export const TableSettingsPanel = ({
       updateInjectedStyles(settingsWithCurrentContent);
       const tableHtml = generateTableHtml(settingsWithCurrentContent);
       element.innerHTML = tableHtml;
-      element.setAttribute('data-element-type', 'table');
+      element.setAttribute("data-element-type", "table");
       element.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(settingsWithCurrentContent)
       );
       addTableInteractivity(element);
@@ -1101,11 +1170,22 @@ export const TableSettingsPanel = ({
       return;
     }
 
+    // Always reinitialize when selectedElement changes to ensure proper isolation
+    // Store the current element reference to track changes
+    const currentElementId =
+      selectedElement.getAttribute("data-element-id") ||
+      selectedElement.id ||
+      selectedElement.toString();
+    const lastElementId = (initializedRef as any).lastElementId;
+
+    // If this is a different element, always reinitialize
+    if (lastElementId !== currentElementId) {
+      initializedRef.current = false;
+      (initializedRef as any).lastElementId = currentElementId;
+    }
+
     // Only initialize once per element selection
-    if (
-      initializedRef.current &&
-      selectedElement.getAttribute('data-table-settings')
-    ) {
+    if (initializedRef.current) {
       return;
     }
 
@@ -1119,7 +1199,7 @@ export const TableSettingsPanel = ({
 
         // Always try to get settings from the data attribute first
         const settingsAttr = selectedElement.getAttribute(
-          'data-table-settings'
+          "data-table-settings"
         );
         if (settingsAttr) {
           try {
@@ -1137,7 +1217,7 @@ export const TableSettingsPanel = ({
             }
           } catch (parseError) {
             console.error(
-              'Error parsing table settings from attribute:',
+              "Error parsing table settings from attribute:",
               parseError
             );
             // Fall back to HTML parsing
@@ -1149,10 +1229,10 @@ export const TableSettingsPanel = ({
         }
 
         // Always try to capture any current DOM content as it might be more recent
-        const table = selectedElement.querySelector('table');
+        const table = selectedElement.querySelector("table");
         if (table) {
           // Check for any table cells and capture their content
-          const allCells = table.querySelectorAll('td, th');
+          const allCells = table.querySelectorAll("td, th");
           if (allCells.length > 0) {
             // There are cells, capture their content
             const updatedData = [
@@ -1160,8 +1240,8 @@ export const TableSettingsPanel = ({
             ];
 
             allCells.forEach((cell) => {
-              const row = parseInt(cell.getAttribute('data-row') || '-1');
-              const col = parseInt(cell.getAttribute('data-col') || '-1');
+              const row = parseInt(cell.getAttribute("data-row") || "-1");
+              const col = parseInt(cell.getAttribute("data-col") || "-1");
 
               if (
                 row >= 0 &&
@@ -1169,13 +1249,13 @@ export const TableSettingsPanel = ({
                 updatedData[row] &&
                 updatedData[row][col]
               ) {
-                const currentContent = cell.textContent?.trim() || '';
+                const currentContent = cell.textContent?.trim() || "";
                 // Only update if there's actual user content (not default placeholders)
                 if (
                   currentContent &&
-                  !currentContent.startsWith('Header ') &&
-                  !currentContent.startsWith('Cell ') &&
-                  currentContent !== '&nbsp;'
+                  !currentContent.startsWith("Header ") &&
+                  !currentContent.startsWith("Cell ") &&
+                  currentContent !== "&nbsp;"
                 ) {
                   updatedData[row][col].content = currentContent;
                 }
@@ -1189,10 +1269,18 @@ export const TableSettingsPanel = ({
         // Update local state only - no parent updates during initialization
         setSettings(initialSettings);
 
-        // Just update the DOM element directly
-        updateTableElement(selectedElement, initialSettings);
+        // Reset any pending update flags
+        hasPendingContentUpdate.current = false;
+        isProcessingFocusOut.current = false;
+        isCapturingContent.current = false;
+        isSyncingCapturedContent.current = false;
+
+        // Only update DOM element if we're not switching elements
+        if (!isSwitchingElements.current) {
+          updateTableElement(selectedElement, initialSettings);
+        }
       } catch (err) {
-        console.error('Error initializing table settings:', err);
+        console.error("Error initializing table settings:", err);
         const newDefaults = { ...defaultTableSettings };
         newDefaults.data = generateInitialData(
           newDefaults.rows,
@@ -1215,8 +1303,12 @@ export const TableSettingsPanel = ({
     setTimeout(initializeSettings, 0);
 
     return () => {
-      // Clean up any possible timeouts - but don't reset initialization flag
-      // as this prevents updates from working properly
+      // Clean up any possible timeouts and reset initialization when element changes
+      if (inputTimeoutRef.current) {
+        clearTimeout(inputTimeoutRef.current);
+      }
+      // Reset initialization flag when component unmounts or element changes
+      initializedRef.current = false;
     };
   }, [selectedElement, parseExistingTable, updateTableElement]);
 
@@ -1237,7 +1329,8 @@ export const TableSettingsPanel = ({
       isEditingText ||
       isProcessingFocusOut.current ||
       isCapturingContent.current ||
-      isSyncingCapturedContent.current
+      isSyncingCapturedContent.current ||
+      isSwitchingElements.current
     ) {
       return;
     }
@@ -1254,6 +1347,8 @@ export const TableSettingsPanel = ({
 
   // Handlers for rows and columns
   const handleRowChange = (delta: number) => {
+    if (isSwitchingElements.current) return;
+
     const newRowCount = settings.rows + delta;
     if (newRowCount < 1) return;
 
@@ -1285,7 +1380,7 @@ export const TableSettingsPanel = ({
     // Directly update parent similar to chart-settings-panel
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1294,6 +1389,8 @@ export const TableSettingsPanel = ({
   };
 
   const handleColumnChange = (delta: number) => {
+    if (isSwitchingElements.current) return;
+
     const newColCount = settings.columns + delta;
     if (newColCount < 1) return;
 
@@ -1303,7 +1400,7 @@ export const TableSettingsPanel = ({
       newData.forEach((row, rIndex) => {
         row.push({
           ...createDefaultCell(
-            'Cell',
+            "Cell",
             settings.hasHeader && rIndex === 0,
             settings
           ),
@@ -1327,7 +1424,7 @@ export const TableSettingsPanel = ({
     // Directly update parent similar to chart-settings-panel
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1387,7 +1484,7 @@ export const TableSettingsPanel = ({
         const cell = newData[r][c];
         cell.merged = true;
         cell.mergedWith = { row: minRow, col: minCol };
-        cell.content = '';
+        cell.content = "";
       }
     }
 
@@ -1402,7 +1499,7 @@ export const TableSettingsPanel = ({
     // Directly update parent similar to chart-settings-panel
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1464,7 +1561,7 @@ export const TableSettingsPanel = ({
     // Directly update parent similar to chart-settings-panel
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1496,7 +1593,7 @@ export const TableSettingsPanel = ({
     // Directly update parent
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1528,7 +1625,7 @@ export const TableSettingsPanel = ({
     // Directly update parent
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1560,7 +1657,7 @@ export const TableSettingsPanel = ({
     // Directly update parent
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1592,7 +1689,7 @@ export const TableSettingsPanel = ({
     // Directly update parent
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1602,7 +1699,7 @@ export const TableSettingsPanel = ({
 
   // Function to update custom text alignment for selected cells
   const handleCustomCellAlignment = (
-    alignment: 'left' | 'center' | 'right'
+    alignment: "left" | "center" | "right"
   ) => {
     if (settings.selectedCells.length === 0) return;
 
@@ -1626,7 +1723,7 @@ export const TableSettingsPanel = ({
     // Directly update parent
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1658,7 +1755,7 @@ export const TableSettingsPanel = ({
     // Directly update parent
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1668,7 +1765,7 @@ export const TableSettingsPanel = ({
 
   // Function to update custom vertical alignment for selected cells
   const handleCustomCellVerticalAlignment = (
-    alignment: 'top' | 'middle' | 'bottom'
+    alignment: "top" | "middle" | "bottom"
   ) => {
     if (settings.selectedCells.length === 0) return;
 
@@ -1692,7 +1789,7 @@ export const TableSettingsPanel = ({
     // Directly update parent
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1724,7 +1821,7 @@ export const TableSettingsPanel = ({
     // Directly update parent
     if (selectedElement) {
       selectedElement.setAttribute(
-        'data-table-settings',
+        "data-table-settings",
         JSON.stringify(newSettings)
       );
       updateTableElement(selectedElement, newSettings);
@@ -1737,17 +1834,23 @@ export const TableSettingsPanel = ({
       key: keyof TableSettings,
       value: TableSettings[keyof TableSettings]
     ): void => {
+      // Prevent settings updates during element switching
+      if (isSwitchingElements.current) {
+        console.log("Skipping settings update during element switching");
+        return;
+      }
+
       let newSettings: TableSettings;
 
       // Handle special cases like data updates from cell edits
-      if (key === 'data' && Array.isArray(value)) {
+      if (key === "data" && Array.isArray(value)) {
         newSettings = {
           ...settings,
           data: value as CellData[][],
         };
       }
       // Special handling for hasHeader toggle to properly update the table structure
-      else if (key === 'hasHeader') {
+      else if (key === "hasHeader") {
         const hasHeader = value as boolean;
         let newData = [...settings.data.map((row) => [...row])];
 
@@ -1807,10 +1910,10 @@ export const TableSettingsPanel = ({
 
       // Always notify parent component similar to chart-settings-panel
       // Remove the isInitializing check as it was causing issues in production
-      if (selectedElement) {
+      if (selectedElement && !isSwitchingElements.current) {
         // Update the element's data attribute
         selectedElement.setAttribute(
-          'data-table-settings',
+          "data-table-settings",
           JSON.stringify(newSettings)
         );
 
@@ -1878,26 +1981,26 @@ export const TableSettingsPanel = ({
 
   // Function to create table preview with selectable cells
   const generatePreviewTable = useCallback(() => {
-    const tableEl = document.createElement('table');
-    tableEl.className = 'preview-table';
-    tableEl.style.width = '100%';
-    tableEl.style.borderCollapse = 'collapse';
-    tableEl.style.tableLayout = 'fixed';
+    const tableEl = document.createElement("table");
+    tableEl.className = "preview-table";
+    tableEl.style.width = "100%";
+    tableEl.style.borderCollapse = "collapse";
+    tableEl.style.tableLayout = "fixed";
 
     for (let i = 0; i < settings.data.length; i++) {
-      const tr = document.createElement('tr');
+      const tr = document.createElement("tr");
       tableEl.appendChild(tr);
 
       for (let j = 0; j < settings.data[i].length; j++) {
         const cell = settings.data[i][j];
         if (cell.merged) continue;
 
-        const cellEl = document.createElement(cell.isHeader ? 'th' : 'td');
+        const cellEl = document.createElement(cell.isHeader ? "th" : "td");
         cellEl.colSpan = cell.colspan;
         cellEl.rowSpan = cell.rowspan;
         cellEl.dataset.row = i.toString();
         cellEl.dataset.col = j.toString();
-        cellEl.innerHTML = '&nbsp;'; // No text content
+        cellEl.innerHTML = "&nbsp;"; // No text content
 
         // Apply styles from settings, but without font-size
         const bgColor =
@@ -1928,11 +2031,11 @@ export const TableSettingsPanel = ({
           (c) => c.row === i && c.col === j
         );
         if (isSelected) {
-          cellEl.style.boxShadow = 'inset 0 0 0 2px #3b82f6'; // A blue glow for selection
+          cellEl.style.boxShadow = "inset 0 0 0 2px #3b82f6"; // A blue glow for selection
         }
 
         tr.appendChild(cellEl);
-        cellEl.addEventListener('mousedown', (e) => {
+        cellEl.addEventListener("mousedown", (e) => {
           handleCellSelection(i, j, e as unknown as React.MouseEvent);
         });
       }
@@ -1950,10 +2053,10 @@ export const TableSettingsPanel = ({
     const newPreviewTable = generatePreviewTable();
 
     // Get the preview container
-    const previewContainer = document.getElementById('table-preview-container');
+    const previewContainer = document.getElementById("table-preview-container");
     if (previewContainer) {
       // Clear and update
-      previewContainer.innerHTML = '';
+      previewContainer.innerHTML = "";
       previewContainer.appendChild(newPreviewTable);
 
       // Store reference
@@ -1964,7 +2067,7 @@ export const TableSettingsPanel = ({
   // Cleanup injected styles when component unmounts
   useEffect(() => {
     return () => {
-      const existingStyle = document.getElementById('table-builder-styles');
+      const existingStyle = document.getElementById("table-builder-styles");
       if (existingStyle) {
         existingStyle.remove();
       }
@@ -1972,37 +2075,37 @@ export const TableSettingsPanel = ({
       // Restore original inline styles to all table cells when CSS is removed
       // This ensures text colors and other styling are preserved after panel closure
       if (selectedElement) {
-        const table = selectedElement.querySelector('table');
+        const table = selectedElement.querySelector("table");
         if (table) {
           // Get current table settings for fallback
           const tableSettingsAttr = selectedElement.getAttribute(
-            'data-table-settings'
+            "data-table-settings"
           );
           let currentSettings = null;
           if (tableSettingsAttr) {
             try {
               currentSettings = JSON.parse(tableSettingsAttr);
             } catch (e) {
-              console.warn('Failed to parse table settings during cleanup:', e);
+              console.warn("Failed to parse table settings during cleanup:", e);
             }
           }
 
-          table.querySelectorAll('td, th').forEach((cell: Element) => {
-            const originalStyle = cell.getAttribute('data-original-style');
+          table.querySelectorAll("td, th").forEach((cell: Element) => {
+            const originalStyle = cell.getAttribute("data-original-style");
             const htmlCell = cell as HTMLElement;
 
             // First priority: restore original inline styles if they exist
             if (originalStyle) {
-              htmlCell.setAttribute('style', originalStyle);
+              htmlCell.setAttribute("style", originalStyle);
             }
             // Second priority: check if cell already has proper color in current style
             else {
-              const currentStyle = htmlCell.getAttribute('style') || '';
-              const hasColor = currentStyle.includes('color:');
+              const currentStyle = htmlCell.getAttribute("style") || "";
+              const hasColor = currentStyle.includes("color:");
 
               if (!hasColor && currentSettings) {
                 // Cell is missing color - reconstruct inline styles from settings
-                const isHeader = cell.tagName.toLowerCase() === 'th';
+                const isHeader = cell.tagName.toLowerCase() === "th";
                 const textColor = isHeader
                   ? currentSettings.headerTextColor
                   : currentSettings.cellTextColor;
@@ -2011,42 +2114,42 @@ export const TableSettingsPanel = ({
                   : currentSettings.cellBackgroundColor;
                 const borderStyle = currentSettings.showBorders
                   ? `${currentSettings.borderWidth}px solid ${currentSettings.borderColor}`
-                  : 'none';
+                  : "none";
 
                 const fallbackStyle = `
                   padding: ${currentSettings.cellPadding || 12}px;
                   text-align: left;
                   vertical-align: top;
                   font-size: ${currentSettings.fontSize || 14}px;
-                  font-family: ${currentSettings.fontFamily || 'Arial'};
+                  font-family: ${currentSettings.fontFamily || "Arial"};
                   border: ${borderStyle};
                   background-color: ${bgColor};
                   color: ${textColor};
                 `
                   .trim()
-                  .replace(/\s+/g, ' ');
+                  .replace(/\s+/g, " ");
 
-                htmlCell.setAttribute('style', fallbackStyle);
+                htmlCell.setAttribute("style", fallbackStyle);
               } else if (!hasColor) {
                 // Last resort: add a default text color
-                htmlCell.style.color = '#1f2937';
+                htmlCell.style.color = "#1f2937";
               }
             }
 
             // Remove the CSS classes that no longer have corresponding styles
             cell.classList.remove(
-              'table-builder-cell',
-              'table-builder-header',
-              'table-builder-body'
+              "table-builder-cell",
+              "table-builder-header",
+              "table-builder-body"
             );
 
             // Also remove editing-related classes and attributes
-            cell.classList.remove('editable-cell', 'cell-focus');
-            htmlCell.removeAttribute('contenteditable');
+            cell.classList.remove("editable-cell", "cell-focus");
+            htmlCell.removeAttribute("contenteditable");
           });
 
           // Remove table-level classes that might be left over
-          table.classList.remove('main-document-table');
+          table.classList.remove("main-document-table");
         }
       }
     };
@@ -2054,25 +2157,25 @@ export const TableSettingsPanel = ({
 
   // Return the component UI
   return (
-    <div className='table-settings-panel w-full max-w-sm border-l bg-background flex flex-col h-screen'>
-      <div className='p-4 border-b flex items-center justify-between'>
-        <h2 className='text-lg font-semibold'>Table Settings</h2>
+    <div className="table-settings-panel w-full max-w-sm border-l bg-background flex flex-col h-screen">
+      <div className="p-4 border-b flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Table Settings</h2>
         <Button
-          variant='ghost'
-          size='sm'
+          variant="ghost"
+          size="sm"
           onClick={() => {
             if (selectedElement) {
               // Check if the element is inside a layout column
               const isInLayoutColumn =
-                selectedElement.closest('.layout-column-content') !== null ||
-                selectedElement.closest('.layout-column') !== null;
+                selectedElement.closest(".layout-column-content") !== null ||
+                selectedElement.closest(".layout-column") !== null;
 
               if (isInLayoutColumn) {
                 // For elements inside layout columns, only remove the element itself
                 selectedElement.remove();
               } else {
                 // For standalone elements, remove the element-container if it exists
-                const container = selectedElement.closest('.element-container');
+                const container = selectedElement.closest(".element-container");
                 if (container) {
                   container.remove();
                 } else {
@@ -2083,25 +2186,25 @@ export const TableSettingsPanel = ({
               onClose();
             }
           }}
-          className='text-red-600 hover:text-red-700 hover:bg-red-50'
+          className="text-red-600 hover:text-red-700 hover:bg-red-50"
         >
-          <Trash2 className='h-4 w-4' />
+          <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      <ScrollArea className='flex-grow'>
-        <div className='p-4 space-y-4'>
+      <ScrollArea className="flex-grow">
+        <div className="p-4 space-y-4">
           <Card>
-            <CardHeader className='pb-2'>
-              <CardTitle className='text-base'>Live Preview</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Live Preview</CardTitle>
             </CardHeader>
             <CardContent>
               <div
-                id='table-preview-container'
-                className='p-2 bg-gray-100 rounded-md overflow-x-auto'
+                id="table-preview-container"
+                className="p-2 bg-gray-100 rounded-md overflow-x-auto"
               >
                 {/* Preview table will be injected here */}
               </div>
-              <div className='mt-2 text-xs text-muted-foreground'>
+              <div className="mt-2 text-xs text-muted-foreground">
                 Click to select cells. Use Ctrl/Cmd+click for multiple
                 selection.
               </div>
@@ -2111,14 +2214,14 @@ export const TableSettingsPanel = ({
           {/* Custom Cell Colors Card */}
           {settings.selectedCells.length > 0 && (
             <Card>
-              <CardHeader className='pb-2'>
-                <CardTitle className='text-base'>
-                  Selected Cell{settings.selectedCells.length > 1 ? 's' : ''} (
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">
+                  Selected Cell{settings.selectedCells.length > 1 ? "s" : ""} (
                   {settings.selectedCells.length})
                 </CardTitle>
               </CardHeader>
-              <CardContent className='space-y-4'>
-                <div className='space-y-2'>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
                   <Label>Custom Background Color</Label>
                   <ColorPicker
                     value={
@@ -2129,20 +2232,20 @@ export const TableSettingsPanel = ({
                       ]
                         ? settings.data[settings.selectedCells[0].row][
                             settings.selectedCells[0].col
-                          ].customBackgroundColor || '#ffffff'
-                        : '#ffffff'
+                          ].customBackgroundColor || "#ffffff"
+                        : "#ffffff"
                     }
                     onChange={handleCustomCellBackgroundColor}
                   />
                 </div>
                 <Button
-                  variant='outline'
+                  variant="outline"
                   onClick={handleResetCellBackgroundColor}
-                  className='w-full'
+                  className="w-full"
                 >
                   Reset Background
                 </Button>
-                <div className='space-y-2'>
+                <div className="space-y-2">
                   <Label>Custom Width (px)</Label>
                   <Slider
                     value={[
@@ -2160,9 +2263,9 @@ export const TableSettingsPanel = ({
                     max={500}
                     min={50}
                     step={5}
-                    className='w-full'
+                    className="w-full"
                   />
-                  <div className='text-xs text-muted-foreground text-center'>
+                  <div className="text-xs text-muted-foreground text-center">
                     {settings.selectedCells.length === 1 &&
                     settings.data[settings.selectedCells[0].row] &&
                     settings.data[settings.selectedCells[0].row][
@@ -2170,21 +2273,21 @@ export const TableSettingsPanel = ({
                     ]
                       ? settings.data[settings.selectedCells[0].row][
                           settings.selectedCells[0].col
-                        ].customWidth || 'Default'
-                      : 'Default'}{' '}
+                        ].customWidth || "Default"
+                      : "Default"}{" "}
                     px
                   </div>
                 </div>
                 <Button
-                  variant='outline'
+                  variant="outline"
                   onClick={handleResetCellWidth}
-                  className='w-full'
+                  className="w-full"
                 >
                   Reset Width
                 </Button>
-                <div className='space-y-2'>
+                <div className="space-y-2">
                   <Label>Horizontal Alignment</Label>
-                  <div className='flex gap-1'>
+                  <div className="flex gap-1">
                     <Button
                       variant={
                         settings.selectedCells.length === 1 &&
@@ -2194,15 +2297,15 @@ export const TableSettingsPanel = ({
                         ] &&
                         settings.data[settings.selectedCells[0].row][
                           settings.selectedCells[0].col
-                        ].customTextAlign === 'left'
-                          ? 'default'
-                          : 'outline'
+                        ].customTextAlign === "left"
+                          ? "default"
+                          : "outline"
                       }
-                      size='sm'
-                      onClick={() => handleCustomCellAlignment('left')}
-                      className='flex-1'
+                      size="sm"
+                      onClick={() => handleCustomCellAlignment("left")}
+                      className="flex-1"
                     >
-                      <AlignLeft className='h-4 w-4' />
+                      <AlignLeft className="h-4 w-4" />
                     </Button>
                     <Button
                       variant={
@@ -2213,15 +2316,15 @@ export const TableSettingsPanel = ({
                         ] &&
                         settings.data[settings.selectedCells[0].row][
                           settings.selectedCells[0].col
-                        ].customTextAlign === 'center'
-                          ? 'default'
-                          : 'outline'
+                        ].customTextAlign === "center"
+                          ? "default"
+                          : "outline"
                       }
-                      size='sm'
-                      onClick={() => handleCustomCellAlignment('center')}
-                      className='flex-1'
+                      size="sm"
+                      onClick={() => handleCustomCellAlignment("center")}
+                      className="flex-1"
                     >
-                      <AlignCenter className='h-4 w-4' />
+                      <AlignCenter className="h-4 w-4" />
                     </Button>
                     <Button
                       variant={
@@ -2232,28 +2335,28 @@ export const TableSettingsPanel = ({
                         ] &&
                         settings.data[settings.selectedCells[0].row][
                           settings.selectedCells[0].col
-                        ].customTextAlign === 'right'
-                          ? 'default'
-                          : 'outline'
+                        ].customTextAlign === "right"
+                          ? "default"
+                          : "outline"
                       }
-                      size='sm'
-                      onClick={() => handleCustomCellAlignment('right')}
-                      className='flex-1'
+                      size="sm"
+                      onClick={() => handleCustomCellAlignment("right")}
+                      className="flex-1"
                     >
-                      <AlignRight className='h-4 w-4' />
+                      <AlignRight className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
                 <Button
-                  variant='outline'
+                  variant="outline"
                   onClick={handleResetCellAlignment}
-                  className='w-full'
+                  className="w-full"
                 >
                   Reset Alignment
                 </Button>
-                <div className='space-y-2'>
+                <div className="space-y-2">
                   <Label>Vertical Alignment</Label>
-                  <div className='flex gap-1'>
+                  <div className="flex gap-1">
                     <Button
                       variant={
                         settings.selectedCells.length === 1 &&
@@ -2263,15 +2366,15 @@ export const TableSettingsPanel = ({
                         ] &&
                         settings.data[settings.selectedCells[0].row][
                           settings.selectedCells[0].col
-                        ].customVerticalAlign === 'top'
-                          ? 'default'
-                          : 'outline'
+                        ].customVerticalAlign === "top"
+                          ? "default"
+                          : "outline"
                       }
-                      size='sm'
-                      onClick={() => handleCustomCellVerticalAlignment('top')}
-                      className='flex-1'
+                      size="sm"
+                      onClick={() => handleCustomCellVerticalAlignment("top")}
+                      className="flex-1"
                     >
-                      <AlignVerticalJustifyStart className='h-4 w-4' />
+                      <AlignVerticalJustifyStart className="h-4 w-4" />
                     </Button>
                     <Button
                       variant={
@@ -2282,17 +2385,17 @@ export const TableSettingsPanel = ({
                         ] &&
                         settings.data[settings.selectedCells[0].row][
                           settings.selectedCells[0].col
-                        ].customVerticalAlign === 'middle'
-                          ? 'default'
-                          : 'outline'
+                        ].customVerticalAlign === "middle"
+                          ? "default"
+                          : "outline"
                       }
-                      size='sm'
+                      size="sm"
                       onClick={() =>
-                        handleCustomCellVerticalAlignment('middle')
+                        handleCustomCellVerticalAlignment("middle")
                       }
-                      className='flex-1'
+                      className="flex-1"
                     >
-                      <AlignVerticalJustifyCenter className='h-4 w-4' />
+                      <AlignVerticalJustifyCenter className="h-4 w-4" />
                     </Button>
                     <Button
                       variant={
@@ -2303,30 +2406,30 @@ export const TableSettingsPanel = ({
                         ] &&
                         settings.data[settings.selectedCells[0].row][
                           settings.selectedCells[0].col
-                        ].customVerticalAlign === 'bottom'
-                          ? 'default'
-                          : 'outline'
+                        ].customVerticalAlign === "bottom"
+                          ? "default"
+                          : "outline"
                       }
-                      size='sm'
+                      size="sm"
                       onClick={() =>
-                        handleCustomCellVerticalAlignment('bottom')
+                        handleCustomCellVerticalAlignment("bottom")
                       }
-                      className='flex-1'
+                      className="flex-1"
                     >
-                      <AlignVerticalJustifyEnd className='h-4 w-4' />
+                      <AlignVerticalJustifyEnd className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
                 <Button
-                  variant='outline'
+                  variant="outline"
                   onClick={handleResetCellVerticalAlignment}
-                  className='w-full'
+                  className="w-full"
                 >
                   Reset Vertical Alignment
                 </Button>
-                <div className='text-xs text-muted-foreground'>
+                <div className="text-xs text-muted-foreground">
                   {settings.selectedCells.length === 1
-                    ? 'Customize the background color, width, and alignment (horizontal & vertical) of the selected cell'
+                    ? "Customize the background color, width, and alignment (horizontal & vertical) of the selected cell"
                     : `Apply background color, width, and alignment to all ${settings.selectedCells.length} selected cells`}
                 </div>
               </CardContent>
@@ -2334,142 +2437,142 @@ export const TableSettingsPanel = ({
           )}
 
           <Card>
-            <CardHeader className='pb-2'>
-              <CardTitle className='text-base'>Structure</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Structure</CardTitle>
             </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='flex items-center justify-between'>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
                 <Label>Rows</Label>
-                <div className='flex items-center'>
+                <div className="flex items-center">
                   <Button
-                    variant='outline'
-                    size='icon'
-                    className='h-8 w-8'
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => handleRowChange(-1)}
                   >
-                    <Minus className='h-4 w-4' />
+                    <Minus className="h-4 w-4" />
                   </Button>
                   <Input
-                    type='number'
+                    type="number"
                     value={settings.rows}
                     readOnly
-                    className='w-12 h-8 text-center border-0 focus-visible:ring-0 bg-transparent no-arrows'
+                    className="w-12 h-8 text-center border-0 focus-visible:ring-0 bg-transparent no-arrows"
                   />
                   <Button
-                    variant='outline'
-                    size='icon'
-                    className='h-8 w-8'
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => handleRowChange(1)}
                   >
-                    <Plus className='h-4 w-4' />
+                    <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-              <div className='flex items-center justify-between'>
+              <div className="flex items-center justify-between">
                 <Label>Columns</Label>
-                <div className='flex items-center'>
+                <div className="flex items-center">
                   <Button
-                    variant='outline'
-                    size='icon'
-                    className='h-8 w-8'
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => handleColumnChange(-1)}
                   >
-                    <Minus className='h-4 w-4' />
+                    <Minus className="h-4 w-4" />
                   </Button>
                   <Input
-                    type='number'
+                    type="number"
                     value={settings.columns}
                     readOnly
-                    className='w-12 h-8 text-center border-0 focus-visible:ring-0 bg-transparent no-arrows'
+                    className="w-12 h-8 text-center border-0 focus-visible:ring-0 bg-transparent no-arrows"
                   />
                   <Button
-                    variant='outline'
-                    size='icon'
-                    className='h-8 w-8'
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => handleColumnChange(1)}
                   >
-                    <Plus className='h-4 w-4' />
+                    <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-              <div className='flex items-center justify-between'>
+              <div className="flex items-center justify-between">
                 <Label>Header Row</Label>
                 <Switch
                   checked={settings.hasHeader}
-                  onCheckedChange={(val) => updateSettings('hasHeader', val)}
+                  onCheckedChange={(val) => updateSettings("hasHeader", val)}
                 />
               </div>
-              <div className='grid grid-cols-2 gap-2 pt-2 border-t'>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t">
                 <Button
                   onClick={handleMergeCells}
                   disabled={!canMerge()}
-                  className='w-full'
+                  className="w-full"
                 >
-                  <Merge className='w-4 h-4 mr-2' /> Merge
+                  <Merge className="w-4 h-4 mr-2" /> Merge
                 </Button>
                 <Button
                   onClick={handleSplitCell}
                   disabled={!canSplit()}
-                  className='w-full'
+                  className="w-full"
                 >
-                  <Split className='w-4 h-4 mr-2' /> Split
+                  <Split className="w-4 h-4 mr-2" /> Split
                 </Button>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className='pb-2'>
-              <CardTitle className='text-base'>Styling</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Styling</CardTitle>
             </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='grid grid-cols-2 gap-x-4 gap-y-2'>
-                <Label className='col-span-2 text-xs text-muted-foreground'>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                <Label className="col-span-2 text-xs text-muted-foreground">
                   Header Colors
                 </Label>
                 <div>
-                  <Label className='text-sm font-normal'>Background</Label>
+                  <Label className="text-sm font-normal">Background</Label>
                   <ColorPicker
                     value={settings.headerBackgroundColor}
                     onChange={(color) =>
-                      updateSettings('headerBackgroundColor', color)
+                      updateSettings("headerBackgroundColor", color)
                     }
                   />
                 </div>
                 <div>
-                  <Label className='text-sm font-normal'>Text</Label>
+                  <Label className="text-sm font-normal">Text</Label>
                   <ColorPicker
                     value={settings.headerTextColor}
                     onChange={(color) =>
-                      updateSettings('headerTextColor', color)
+                      updateSettings("headerTextColor", color)
                     }
                   />
                 </div>
-                <Label className='col-span-2 text-xs text-muted-foreground pt-2'>
+                <Label className="col-span-2 text-xs text-muted-foreground pt-2">
                   Body Colors
                 </Label>
                 <div>
-                  <Label className='text-sm font-normal'>Background</Label>
+                  <Label className="text-sm font-normal">Background</Label>
                   <ColorPicker
                     value={settings.cellBackgroundColor}
                     onChange={(color) =>
-                      updateSettings('cellBackgroundColor', color)
+                      updateSettings("cellBackgroundColor", color)
                     }
                   />
                 </div>
                 <div>
-                  <Label className='text-sm font-normal'>Text</Label>
+                  <Label className="text-sm font-normal">Text</Label>
                   <ColorPicker
                     value={settings.cellTextColor}
-                    onChange={(color) => updateSettings('cellTextColor', color)}
+                    onChange={(color) => updateSettings("cellTextColor", color)}
                   />
                 </div>
               </div>
-              <div className='space-y-2 pt-2 border-t'>
+              <div className="space-y-2 pt-2 border-t">
                 <Label>Font Family</Label>
                 <Select
                   value={settings.fontFamily}
-                  onValueChange={(value) => updateSettings('fontFamily', value)}
+                  onValueChange={(value) => updateSettings("fontFamily", value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -2483,52 +2586,52 @@ export const TableSettingsPanel = ({
                   </SelectContent>
                 </Select>
               </div>
-              <div className='space-y-2'>
+              <div className="space-y-2">
                 <Label>Font Size: {settings.fontSize}px</Label>
                 <Slider
                   value={[settings.fontSize]}
-                  onValueChange={([val]) => updateSettings('fontSize', val)}
+                  onValueChange={([val]) => updateSettings("fontSize", val)}
                   min={8}
                   max={32}
                   step={1}
                 />
               </div>
-              <div className='space-y-2'>
+              <div className="space-y-2">
                 <Label>Cell Padding: {settings.cellPadding}px</Label>
                 <Slider
                   value={[settings.cellPadding]}
-                  onValueChange={([val]) => updateSettings('cellPadding', val)}
+                  onValueChange={([val]) => updateSettings("cellPadding", val)}
                   min={0}
                   max={32}
                   step={1}
                 />
               </div>
-              <div className='flex items-center justify-between pt-2 border-t'>
+              <div className="flex items-center justify-between pt-2 border-t">
                 <Label>Full Width</Label>
                 <Switch
                   checked={settings.fullWidth}
                   onCheckedChange={(checked) =>
-                    updateSettings('fullWidth', checked)
+                    updateSettings("fullWidth", checked)
                   }
                 />
               </div>
-              <div className='flex items-center justify-between'>
+              <div className="flex items-center justify-between">
                 <Label>Show Borders</Label>
                 <Switch
                   checked={settings.showBorders}
                   onCheckedChange={(checked) =>
-                    updateSettings('showBorders', checked)
+                    updateSettings("showBorders", checked)
                   }
                 />
               </div>
               {settings.showBorders && (
-                <div className='space-y-4 pt-2 border-t'>
-                  <div className='space-y-2'>
+                <div className="space-y-4 pt-2 border-t">
+                  <div className="space-y-2">
                     <Label>Border Width: {settings.borderWidth}px</Label>
                     <Slider
                       value={[settings.borderWidth]}
                       onValueChange={([val]) =>
-                        updateSettings('borderWidth', val)
+                        updateSettings("borderWidth", val)
                       }
                       min={1}
                       max={10}
@@ -2539,7 +2642,7 @@ export const TableSettingsPanel = ({
                     <Label>Border Color</Label>
                     <ColorPicker
                       value={settings.borderColor}
-                      onChange={(color) => updateSettings('borderColor', color)}
+                      onChange={(color) => updateSettings("borderColor", color)}
                     />
                   </div>
                 </div>
@@ -2548,8 +2651,8 @@ export const TableSettingsPanel = ({
           </Card>
         </div>
       </ScrollArea>
-      <div className='p-4 border-t'>
-        <Button variant='outline' onClick={onClose} className='w-full'>
+      <div className="p-4 border-t">
+        <Button variant="outline" onClick={onClose} className="w-full">
           Close
         </Button>
       </div>
