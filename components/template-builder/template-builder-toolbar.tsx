@@ -47,6 +47,7 @@ import {
   getFocusedFooterText,
 } from "./focus-tracker";
 import { set } from "lodash";
+import { applySyntaxHighlighting } from "@/lib/syntax-highlighter";
 
 interface TemplateBuilderToolbarProps {
   template: any;
@@ -2203,9 +2204,16 @@ export function TemplateBuilderToolbar({
           <select style="font-size: 11px; padding: 2px 6px; border: 1px solid #d1d5db; border-radius: 3px; background: white;" data-code-language="true">
             <option value="html">HTML</option>
             <option value="javascript">JS</option>
+            <option value="typescript">TS</option>
             <option value="css">CSS</option>
             <option value="python">Python</option>
+            <option value="java">Java</option>
+            <option value="cpp">C++</option>
+            <option value="php">PHP</option>
+            <option value="sql">SQL</option>
             <option value="json">JSON</option>
+            <option value="bash">Bash</option>
+            <option value="text">Text</option>
           </select>
           <button style="font-size: 10px; padding: 2px 6px; border: 1px solid #d1d5db; border-radius: 3px; background: white; cursor: pointer;" onclick="copyCodeContent(this)">Copy</button>
         </div>
@@ -2493,14 +2501,24 @@ export function TemplateBuilderToolbar({
     <select style="font-size: 12px; padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; background: white;" data-code-language="true">
       <option value="html">HTML</option>
       <option value="javascript">JavaScript</option>
+      <option value="typescript">TypeScript</option>
       <option value="css">CSS</option>
       <option value="python">Python</option>
-      <option value="json">JSON</option>
       <option value="java">Java</option>
       <option value="cpp">C++</option>
+      <option value="c">C</option>
+      <option value="csharp">C#</option>
+      <option value="php">PHP</option>
+      <option value="ruby">Ruby</option>
+      <option value="go">Go</option>
+      <option value="rust">Rust</option>
       <option value="sql">SQL</option>
+      <option value="json">JSON</option>
+      <option value="xml">XML</option>
+      <option value="yaml">YAML</option>
       <option value="bash">Bash</option>
-      <option value="plain">Plain Text</option>
+      <option value="markdown">Markdown</option>
+      <option value="text">Plain Text</option>
     </select>
   </div>
 </div>
@@ -2543,115 +2561,8 @@ export function TemplateBuilderToolbar({
 
   // Complete code editor functionality - single comprehensive implementation
   useEffect(() => {
-    // Language-specific syntax highlighting functions
-    const escapeHtml = (text: string): string => {
-      return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    };
-
-    const highlightJavaScript = (code: string): string => {
-      return escapeHtml(code)
-        .replace(
-          /\b(function|const|let|var|if|else|for|while|return|class|extends|import|export|from|default|async|await|try|catch|finally|throw|new|this|super|typeof|instanceof|break|continue|switch|case|do)\b/g,
-          '<span style="color: #d73a49; font-weight: 600;">$1</span>'
-        )
-        .replace(
-          /\b(true|false|null|undefined)\b/g,
-          '<span style="color: #005cc5;">$1</span>'
-        )
-        .replace(/\b(\d+\.?\d*)\b/g, '<span style="color: #005cc5;">$1</span>')
-        .replace(
-          /(['"`])((?:\\.|(?!\1)[^\\])*?)\1/g,
-          '<span style="color: #032f62;">$1$2$1</span>'
-        )
-        .replace(
-          /\/\/.*$/gm,
-          '<span style="color: #6a737d; font-style: italic;">$&</span>'
-        )
-        .replace(
-          /\/\*[\s\S]*?\*\//g,
-          '<span style="color: #6a737d; font-style: italic;">$&</span>'
-        );
-    };
-
-    const highlightPython = (code: string): string => {
-      return escapeHtml(code)
-        .replace(
-          /\b(def|class|if|elif|else|for|while|return|import|from|as|try|except|finally|with|lambda|yield|async|await|and|or|not|in|is|break|continue|pass|raise)\b/g,
-          '<span style="color: #d73a49; font-weight: 600;">$1</span>'
-        )
-        .replace(
-          /\b(True|False|None)\b/g,
-          '<span style="color: #005cc5;">$1</span>'
-        )
-        .replace(/\b(\d+\.?\d*)\b/g, '<span style="color: #005cc5;">$1</span>')
-        .replace(
-          /(['"`])((?:\\.|(?!\1)[^\\])*?)\1/g,
-          '<span style="color: #032f62;">$1$2$1</span>'
-        )
-        .replace(
-          /#.*$/gm,
-          '<span style="color: #6a737d; font-style: italic;">$&</span>'
-        );
-    };
-
-    const highlightCSS = (code: string): string => {
-      return escapeHtml(code)
-        .replace(
-          /([.#]?[\w-]+)\s*\{/g,
-          '<span style="color: #6f42c1;">$1</span> {'
-        )
-        .replace(/([\w-]+)\s*:/g, '<span style="color: #d73a49;">$1</span>:')
-        .replace(/:\s*([^;]+);/g, ': <span style="color: #005cc5;">$1</span>;')
-        .replace(
-          /\/\*[\s\S]*?\*\//g,
-          '<span style="color: #6a737d; font-style: italic;">$&</span>'
-        );
-    };
-
-    const highlightJSON = (code: string): string => {
-      return escapeHtml(code)
-        .replace(
-          /("(?:[^"\\]|\\.)*")\s*:/g,
-          '<span style="color: #6f42c1;">$1</span>:'
-        )
-        .replace(
-          /:\s*("(?:[^"\\]|\\.)*")/g,
-          ': <span style="color: #032f62;">$1</span>'
-        )
-        .replace(
-          /:\s*(\d+\.?\d*)/g,
-          ': <span style="color: #005cc5;">$1</span>'
-        )
-        .replace(
-          /:\s*(true|false|null)/g,
-          ': <span style="color: #005cc5;">$1</span>'
-        );
-    };
-
-    const highlightHTML = (code: string): string => {
-      return code
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(
-          /(&lt;!--[\s\S]*?--&gt;)/g,
-          '<span style="color: #6a737d; font-style: italic;">$1</span>'
-        )
-        .replace(
-          /(&lt;!DOCTYPE[^&]*&gt;)/gi,
-          '<span style="color: #6f42c1; font-weight: bold;">$1</span>'
-        )
-        .replace(
-          /(&lt;\/?)([a-zA-Z0-9-]+)([^&]*?)(&gt;)/g,
-          '<span style="color: #22863a;">$1</span><span style="color: #d73a49;">$2</span><span style="color: #6f42c1;">$3</span><span style="color: #22863a;">$4</span>'
-        );
-    };
-
     // Apply syntax highlighting based on language
-    const applySyntaxHighlighting = (codeElement: HTMLElement) => {
+    const applySyntaxHighlightingToElement = (codeElement: HTMLElement) => {
       const codeContent = codeElement.querySelector(
         '[data-code-content="true"]'
       ) as HTMLElement;
@@ -2696,27 +2607,13 @@ export function TemplateBuilderToolbar({
         }
       }
 
-      // Apply highlighting based on language
-      let highlightedHtml = "";
-      switch (language) {
-        case "javascript":
-          highlightedHtml = highlightJavaScript(text);
-          break;
-        case "python":
-          highlightedHtml = highlightPython(text);
-          break;
-        case "css":
-          highlightedHtml = highlightCSS(text);
-          break;
-        case "json":
-          highlightedHtml = highlightJSON(text);
-          break;
-        case "html":
-          highlightedHtml = highlightHTML(text);
-          break;
-        default:
-          highlightedHtml = escapeHtml(text);
-      }
+      // Use the comprehensive syntax highlighting utility
+      const isDarkMode = document.documentElement.classList.contains("dark");
+      const highlightedHtml = applySyntaxHighlighting(
+        text,
+        language,
+        isDarkMode
+      );
 
       // Only update if content is actually different
       if (codeContent.innerHTML !== highlightedHtml) {
@@ -2946,7 +2843,7 @@ export function TemplateBuilderToolbar({
                 codeElement.isConnected &&
                 target.getAttribute("data-code-content") === "true"
               ) {
-                applySyntaxHighlighting(codeElement);
+                applySyntaxHighlightingToElement(codeElement);
               }
             }, 800); // Even longer delay for maximum stability
           }
@@ -2980,7 +2877,7 @@ export function TemplateBuilderToolbar({
           // Apply highlighting immediately when language changes
           setTimeout(() => {
             if (codeElement.isConnected) {
-              applySyntaxHighlighting(codeElement);
+              applySyntaxHighlightingToElement(codeElement);
             }
           }, 10);
         }
@@ -3012,7 +2909,7 @@ export function TemplateBuilderToolbar({
             // Mark as initialized to prevent double highlighting
             if (!(htmlElement as any).highlightInitialized) {
               (htmlElement as any).highlightInitialized = true;
-              applySyntaxHighlighting(htmlElement);
+              applySyntaxHighlightingToElement(htmlElement);
             }
           }
         });
